@@ -160,7 +160,7 @@ def predict():
 @app.route("/api/recommendations", methods=["POST"])
 def recommend_materials():
     data = request.get_json()
-    student_id = data.get("student_id")
+    student_id = data.get("user_id")
 
     if not student_id:
         return jsonify({"error": "Missing student_id"}), 400

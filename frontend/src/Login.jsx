@@ -26,6 +26,7 @@ function Login() {
       });
   
       const data = await response.json();
+      
       console.log("Login response:", data); // ✅ Debug output
   
       if (data.success && data.user) {

@@ -4,6 +4,9 @@ const studentRoutes = require("./StudentManagementServer");
 const cors = require("cors");
 const app = express();
 const PORT = 3000;
+const bcrypt = require("bcrypt");
+
+
 
 app.use(
   cors({
@@ -39,7 +42,7 @@ app.post("/login", (req, res) => {
 
   // 1. Check in students table
   const studentQuery =
-    "SELECT * FROM students WHERE als_email = ? AND password = ?";
+    "SELECT * FROM students WHERE als_email = ? ";
   db.query(studentQuery, [email, password], (err, studentResults) => {
     if (err) {
       console.error("Student query error:", err);
@@ -56,7 +59,7 @@ app.post("/login", (req, res) => {
           id: student.student_id,
           firstName: student.first_name,
           lastName: student.last_name,
-          email: student.email,
+          email: student.als_email,  // Changed this from `student._email`
           role_id: student.role_id,
           profile_pic: student.profile_pic,
         },
@@ -124,8 +127,8 @@ app.post("/login", (req, res) => {
 });
 
 //STUDENT MODULE
-app.get("/student-dashboard", (req, res) => {
-  const studentId = req.query.student_id; // ✅ Get student_id from URL query
+app.get('/student-dashboard', (req, res) => {
+  const studentId = req.headers["student_id"]; // ✅ Get student_id from URL query
 
   if (!studentId) {
     return res.status(400).json({ error: "student_id is required" });
@@ -148,9 +151,13 @@ app.get("/student-dashboard", (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    // Send back all relevant user data except profile_pic
     res.json(results[0]);
+    console.log(results)
+
   });
 });
+
 
 //AE Readiness Prediction --DSSystem
 app.post("/save-prediction", (req, res) => {

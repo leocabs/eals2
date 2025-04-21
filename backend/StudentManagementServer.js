@@ -20,6 +20,7 @@ router.get("/students", (req, res) => {
     SELECT
       s.student_id,
       s.first_name,
+      s.middle_name,
       s.last_name,
       s.sex,
       s.school,
@@ -60,6 +61,49 @@ router.get("/students", (req, res) => {
     });
   });*/
 
+// Fetch learning_materials using callback-style
+router.get("/reading_materials", (req, res) => {
+  const query = "SELECT * FROM learning_materials ORDER BY ls_id";
+
+  db.query(query, (error, results) => {
+    if (error) {
+      console.error("Error fetching materials:", error);
+      return res.status(500).json({ error: "Server error" });
+    }
+
+    res.json(results);
+  });
+});
+
+// Express.js route handler
+router.get("/reading_materials/:ls_id", (req, res) => {
+  const { ls_id } = req.params;
+
+  const query = "SELECT * FROM learning_materials WHERE ls_id = ?";
+  db.query(query, [ls_id], (err, results) => {
+    if (err) {
+      console.error("Error fetching materials:", err);
+      return res.status(500).json({ message: "Error fetching materials" });
+    }
+    res.json(results); // Send materials as JSON
+  });
+});
+
+// Create materials
+router.post("/upload-material", async (req, res) => {
+  const { ls_id, material_title, description, file_url } = req.body;
+
+  try {
+    const sql = `INSERT INTO learning_materials (ls_id, material_title, description, file_url) 
+                 VALUES (?, ?, ?, ?)`;
+    await db.query(sql, [ls_id, material_title, description, file_url]);
+    res.status(201).json({ message: "Material uploaded successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to upload material" });
+  }
+});
+
 router.get("/count", (req, res) => {
   const { user_id } = req.query;
 
@@ -80,47 +124,52 @@ router.get("/dashboard-data", (req, res) => {
   }
 
   const query = `
-      SELECT 
-          s.student_id,
-          s.first_name,
-          s.middle_name,
-          s.last_name,
-          s.school,
-          a.score_id,
-          a.flt_score
-      FROM 
-          students s
-      JOIN 
-          assessment_scores a ON s.student_id = a.user_id
-      WHERE 
-          s.teacher_id = ?
-          AND a.score_id = (
-            SELECT MAX(score_id) 
-            FROM assessment_scores 
-            WHERE user_id = s.student_id
-          );
-    `;
+    SELECT 
+        s.student_id,
+        s.first_name,
+        s.middle_name,
+        s.last_name,
+        s.school,
+        a.score_id,
+        a.flt_score
+    FROM 
+        students s
+    JOIN 
+        assessment_scores a ON s.student_id = a.user_id
+    WHERE 
+        s.teacher_id = ?
+        AND a.score_id = (
+          SELECT MAX(score_id) 
+          FROM assessment_scores 
+          WHERE user_id = s.student_id
+        );
+  `;
 
   db.query(query, [teacher_id], (err, results) => {
     if (err) return res.status(500).send(err);
 
     const atRiskStudents = results.filter((r) => r.flt_score < 75);
-    const totalAtRisk = atRiskStudents.length;
-    const readyCount = results.filter((r) => r.flt_score >= 75).length;
-    const averageScore =
-      totalAtRisk === 0
-        ? 0
-        : atRiskStudents.reduce((acc, r) => acc + r.flt_score, 0) / totalAtRisk;
+    const readyStudents = results.filter((r) => r.flt_score >= 75);
+
     const total = results.length;
+    const atRiskCount = atRiskStudents.length;
+    const readyCount = readyStudents.length;
+
+    const averageScore =
+      atRiskCount === 0
+        ? 0
+        : atRiskStudents.reduce((acc, r) => acc + r.flt_score, 0) / atRiskCount;
+
     const completionRate =
       total === 0 ? 0 : Math.round((readyCount / total) * 100);
 
     res.json({
       total,
-      atRiskCount: totalAtRisk,
       readyCount,
-      completionRate,
+      atRiskCount,
       averageScore,
+      completionRate,
+      readyStudents,
       atRiskStudents,
     });
   });
@@ -258,5 +307,53 @@ router.delete(
     }
   }
 );
+
+// GET: Real students and their LS scores
+router.get("/progress-report", (req, res) => {
+  const teacherId = req.query.teacher_id;
+
+  if (!teacherId) return res.status(400).json({ error: "Missing teacher_id" });
+
+  const query = `
+   SELECT 
+  s.student_id, s.first_name, s.middle_name, s.last_name, s.lrn, s.school,
+  a.ls1_total_english, a.ls1_total_filipino, a.ls2_slct,
+  a.ls3_mpss, a.ls4_lcs, a.ls5_uss, a.ls6_dc
+FROM students s
+JOIN (
+  SELECT user_id, 
+         MAX(date_taken) AS latest_score_date
+  FROM assessment_scores
+  GROUP BY user_id
+) latest_scores ON latest_scores.user_id = s.student_id
+JOIN assessment_scores a ON a.user_id = latest_scores.user_id AND a.date_taken = latest_scores.latest_score_date
+WHERE s.teacher_id = ?
+GROUP BY s.student_id, a.ls1_total_english, a.ls1_total_filipino, a.ls2_slct,
+         a.ls3_mpss, a.ls4_lcs, a.ls5_uss, a.ls6_dc
+LIMIT 0, 1000;
+
+  `;
+
+  db.query(query, [teacherId], (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+
+    const formatted = results.map((student) => ({
+      name: `${student.first_name} ${student.middle_name} ${student.last_name}`,
+      lrn: student.lrn,
+      class: student.school,
+      progress: [
+        { strand: "LS 1 Communication-English", score: student.ls1_total_english },
+        { strand: "LS 1 Communication-Filipino", score: student.ls1_total_filipino },
+        { strand: "LS 2 - SLCT", score: student.ls2_slct },
+        { strand: "LS 3 - MPSS", score: student.ls3_mpss },
+        { strand: "LS 4 - LCS", score: student.ls4_lcs },
+        { strand: "LS 5 - USS", score: student.ls5_uss },
+        { strand: "LS 6 - DC", score: student.ls6_dc },
+      ],
+    }));
+
+    res.json(formatted);
+  });
+});
 
 module.exports = router;

@@ -40,9 +40,7 @@ function TeacherHeader() {
   return (
     <header className="bg-[#E3D0B4] flex justify-between items-center px-4 py-3 shadow-md">
       <div className="flex items-center gap-4">
-        <button className="text-gray-800">
-          <Menu size={24} />
-        </button>
+        
       </div>
 
       <div className="flex items-center gap-4">

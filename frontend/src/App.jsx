@@ -29,22 +29,21 @@ import TeacherDashboard from "./pages/Dashboard";
 import StudentManagement from "./pages/StudentManagement";
 import ClassManagement from "./pages/ClassManagement";
 import ReadingMaterials from "./pages/ReadingMaterials";
-import SubjectModules from "./pages/SubjectModules";
-import SubjectSelector from "./pages/SubjectSelector";
 import MockupTest from "./pages/MockupTest";
 import QuestionList from "./pages/QuestionList";
 import ProgressReport from "./pages/ProgressReport";
 import QuestionEditor from "./components/QuestionEditorModal";
-import TeacherHeader from "./components/TeacherHeader"
+import TeacherHeader from "./components/TeacherHeader";
 import TeacherSidebar from "./components/TeacherSidebar";
+import UploadMaterial from "./pages/UploadMaterials";
 
 function AdminLayout({ children }) {
   return (
-    <div className="flex">
+    <div className="flex h-screen">
       <AdminSidebar />
       <div className="flex flex-col flex-1 overflow-auto">
         <AdminHeader />
-        <div className="flex-grow bg-gray-50 min-h-screen">{children}</div>
+        <div className="flex-grow bg-gray-50 ">{children}</div>
       </div>
     </div>
   );
@@ -52,11 +51,11 @@ function AdminLayout({ children }) {
 
 function TeacherLayout({ children }) {
   return (
-    <div className="flex">
+    <div className="flex h-screen ">
       <TeacherSidebar />
       <div className="flex flex-col flex-1 overflow-auto">
-        <TeacherHeader/>
-        <div className="flex-grow bg-gray-50 min-h-screen">{children}</div>
+        <TeacherHeader />
+        <div className="flex-grow bg-gray-50 ">{children}</div>
       </div>
     </div>
   );
@@ -109,6 +108,15 @@ export default function App() {
           element={
             <TeacherLayout>
               <ReadingMaterials />
+            </TeacherLayout>
+          }
+        />
+
+        <Route
+          path="/upload-materials"
+          element={
+            <TeacherLayout>
+              <UploadMaterial />
             </TeacherLayout>
           }
         />

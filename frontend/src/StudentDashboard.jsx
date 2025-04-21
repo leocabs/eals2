@@ -8,30 +8,13 @@ import AnnouncementCard from "./components/AnnouncementCard";
 function StudentDashboard() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [totalAssessments, setTotalAssessments] = useState(0);
+  const [assessments, setAssessments] = useState([]); // Store assessments for the table
 
   const stats = [
     { count: totalAssessments, label: "Total Assessments" },
     { count: "72%", label: "Lowest Score" },
     { count: "80%", label: "Highest Score" },
     { count: "85%", label: "A&E Preparedness" },
-  ];
-
-  const assessments = [
-    {
-      id: 1,
-      name: "Module 1 Practice Test",
-      score: "90%",
-      date_taken: "11/07/2014",
-      progress: 80,
-    },
-    {
-      id: 2,
-      name: "Module 5 Practice Test",
-      score: "56%",
-      date_taken: "11/08/2014",
-      progress: 50,
-    },
-    // Add more...
   ];
 
   const columns = ["Assessment", "Score", "Date Taken", "Progress"];
@@ -47,27 +30,20 @@ function StudentDashboard() {
   ];
 
   useEffect(() => {
-    const studentId = localStorage.getItem("user_id");
-  
-    if (studentId) {
-      fetch(`http://localhost:3000/aemock-results`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "user_id": studentId, // Send user_id in the headers
-        },
+  const studentId = localStorage.getItem("user_id");
+
+  if (studentId) {
+    fetch(`http://localhost:3000/aemock-results?student_id=${studentId}`)
+      .then((response) => response.json())
+      .then((data) => {
+        // Ensure 'assessments' is an array before calling .map()
+        setAssessments(Array.isArray(data.assessments) ? data.assessments : []);
       })
-        .then((response) => response.json())
-        .then((data) => {
-          setTotalAssessments(data.length);
-        })
-        .catch((error) => {
-          console.error("Error fetching assessments:", error);
-        });
-      
-    }
-  }, []);
-  
+      .catch((error) => {
+        console.error("Error fetching assessments:", error);
+      });
+  }
+}, []);
 
   return (
     <>

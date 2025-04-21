@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import emailjs from '@emailjs/browser';
 
+
 export default function AddStudentModal({ isOpen, onClose, onSave, initialData = null }) {
 
   const defaultForm = {
@@ -61,7 +62,7 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
 
   const handleSubmit = () => {
     const errors = {};
-    const als_email = `${formData.lrn}@als.edu.ph`;
+    const als_email = `${formData.first_name}@als.edu.ph`;
     const password = `${formData.first_name}${formData.last_name}`.toLowerCase() + "@als";
 
     // Required fields
@@ -117,10 +118,9 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
       ? { ...formData, student_id: initialData.student_id, als_email, password, teacher_id: loggedInTeacherId }
       : { ...formData, als_email, password, teacher_id: loggedInTeacherId };
     
-
     onSave(studentData);
 
-    // Only send email for new users
+    // Send email only if adding new student
     if (!initialData) {
       const fullName = `${formData.first_name} ${formData.last_name}`;
       alert(`${fullName}\nE-ALS Email: ${als_email}\nPassword: ${password}`);
