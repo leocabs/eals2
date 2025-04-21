@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import bg from "./assets/images/signup-bg.png";
 import logo from "./assets/images/ALS-Logo.png";
 
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,36 +14,54 @@ function Login() {
 
   const handleLogin = async () => {
     if (!email.includes("@")) {
-      setEmailError("Please enter a valid email address.");
+      alert("Please enter a valid email address.");
       return;
     }
-
+  
     try {
-      const response = await fetch('http://localhost:3000/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("http://localhost:3000/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
+  
       const data = await response.json();
-
-      if (data.success) {
-        console.log("Login successful", data);
-        // Store student_id and first name in localStorage for future use
-        localStorage.setItem("user_id", data.user.student_id);  // Store the student_id
-        localStorage.setItem("user_firstname", data.user.firstName);  // Store first name
-        localStorage.setItem("user_lastname", data.user.lastName); // Optionally store last name
-
-        // Redirect to dashboard or homepage
-        navigate('/student-dashboard');
+      console.log("Login response:", data); // ✅ Debug output
+  
+      if (data.success && data.user) {
+        // ✅ Destructure safely inside if-block
+        const userId = data.user.id;
+        const userFirstName = data.user.firstName;
+        const userLastName = data.user.lastName;
+        const userEmail = data.user.email;
+        const userRole = data.role;
+  
+        // ✅ Save to localStorage
+        localStorage.setItem("user_id", userId);
+        localStorage.setItem("user_email", userEmail);
+        localStorage.setItem("user_firstname", userFirstName);
+        localStorage.setItem("user_lastname", userLastName);
+        localStorage.setItem("role", userRole);
+  
+        // ✅ Navigate by role
+        if (userRole === "teacher") {
+          navigate("/teacher-dashboard");
+        } else if (userRole === "student") {
+          navigate("/student-dashboard");
+        } else if (userRole === "admin") {
+          navigate("/admin-dashboard");
+        }
       } else {
-        alert(data.message);  // Show error message from backend
+        alert(data.message || "Login failed.");
       }
-    } catch (err) {
-      console.error("Login error:", err);
-      alert("Something went wrong");
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("An error occurred. Please try again.");
     }
   };
+  
+
+  
 
   return (
     <div className="flex">

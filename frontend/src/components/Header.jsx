@@ -14,6 +14,9 @@ function Header({ handleShow }) {
   const deleteUserId = () => {
     localStorage.removeItem("user_firstname");
     localStorage.removeItem("user_id");
+    localStorage.removeItem("user_lastname");
+    localStorage.removeItem("user_email");
+    localStorage.removeItem("role");
   };
 
   useEffect(() => {

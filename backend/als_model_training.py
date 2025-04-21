@@ -58,9 +58,20 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
+# Class Distribution Pie Chart (Before training)
+plt.figure(figsize=(5, 5))
+labels = ['Not Ready', 'Ready']
+sizes = [Counter(y)[0], Counter(y)[1]]
+colors = ['#FF9999', '#99FF99']
+plt.pie(sizes, labels=labels, autopct='%1.1f%%', colors=colors, startangle=140)
+plt.axis('equal')
+plt.title("Original Class Distribution")
+plt.tight_layout()
+plt.savefig("C:\\Users\\User\\Desktop\\projects\\EALS - Copy\\backend\\models\\class_distribution_pie.png")
+plt.close()
 
 # Train model
-model = SVC(probability=True, kernel='rbf')
+model = SVC(probability=True, kernel='rbf', class_weight='balanced')
 model.fit(X_train_scaled, y_train)
 
 # Save model and scaler
@@ -132,6 +143,9 @@ doc.add_heading("Class Distribution", level=1)
 for k, v in Counter(y).items():
     label = "Ready" if k == 1 else "Not Ready"
     doc.add_paragraph(f"{label}: {v} learners")
+
+doc.add_heading("Original Class Distribution", level=1)
+doc.add_picture("C:\\Users\\User\\Desktop\\projects\\EALS - Copy\\backend\\models\\class_distribution_pie.png")
 
 doc.add_heading("Model Used", level=1)
 doc.add_paragraph("Support Vector Machine (SVM) with RBF kernel")

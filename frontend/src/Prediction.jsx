@@ -1,22 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import passed from "./assets/images/passed.png";
 import failed from "./assets/images/failed.png";
 import CloseIcon from "@mui/icons-material/Close";
+import { useNavigate } from "react-router-dom";
 
 const card = {
   Good: {
     image: passed,
     status: "Passed",
     message: "Congratulations! You are ready for the A&E exam.",
-    button: "Go to Dashboard",
+    button: "Go to AE Mock Test",
   },
   Bad: {
     image: failed,
     status: "Failed",
     message: "You need more preparation. Keep studying!",
-    button: "Let's go and fix it",
+    button: "View Learning Materials",
   },
 };
 
@@ -44,7 +45,7 @@ const keyMap = {
 
 const Prediction = () => {
   const [formData, setFormData] = useState({
-    user_id: 1,
+    user_id: 0,
     pis_score: 0,
     ls1_total_english: 0,
     ls1_total_filipino: 0,
@@ -71,6 +72,16 @@ const Prediction = () => {
   const [loading, setLoading] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [close, setClose] = useState(false);
+  const [displayFltScore, setDisplayFltScore] = useState(false); // New state for displaying FLT score
+
+  const history = useNavigate();
+
+  useEffect(() => {
+    const userId = parseInt(localStorage.getItem("user_id"));
+    if (userId) {
+      setFormData((prev) => ({ ...prev, user_id: userId }));
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -103,53 +114,74 @@ const Prediction = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const flt = calculateFltScore(); // Ensure FLT score is calculated
+    const flt = calculateFltScore();
     setLoading(true);
   
+    const requestData = {
+      ...formData,
+      flt_score: flt,
+    };
+  
     try {
+      // Save the prediction data
       const saveResponse = await fetch("http://localhost:3000/save-prediction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          flt_score: flt, // Sending flt_score
-        }),
+        body: JSON.stringify(requestData),
       });
   
       if (!saveResponse.ok) {
         throw new Error("Failed to save prediction data.");
       }
   
-      // Proceed with prediction request to Flask
+      // Get prediction result
       const predictionResponse = await fetch("http://localhost:5000/api/prediction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          flt_score: flt, // Sending flt_score
-        }),
+        body: JSON.stringify(requestData),
       });
   
       const prediction = await predictionResponse.json();
-      setPredictionResult(prediction);
+  
+      // Set result to state (optional for display)
+      setPredictionResult({
+        ready: prediction.ready,
+        weakStrands: prediction.weak_areas || {},
+      });
+
+  
     } catch (error) {
       console.error("Prediction Error:", error);
     } finally {
       setLoading(false);
+      setDisplayFltScore(true); // optional display logic
+    }
+  };
+
+  const handleClick = () => {
+    if (predictionResult?.ready) {
+      history("/mock-test");
+    } else {
+      // Navigate to learning materials page for failed learners
+      history("/learning-materials", {
+        state: { 
+          refresh: true, 
+          weakAreas: predictionResult?.weakStrands || {} // Pass the weak areas here
+        }
+      });
     }
   };
   
 
   return (
     <>
-    <Header handleShow={() => setShowSidebar(!showSidebar)} />
-    <div className="flex ">
-      {showSidebar && (
-        <div className="w-64 fixed h-full z-20">
-          <Sidebar />
-        </div>
-      )}
-    
+      <Header handleShow={() => setShowSidebar(!showSidebar)} />
+      <div className="flex">
+        {showSidebar && (
+          <div className="w-64 fixed h-full z-20">
+            <Sidebar />
+          </div>
+        )}
         <div className="m-10 p-4 w-full">
           <h1 className="text-3xl font-bold text-slate-800 mb-4">
             Accreditation & Equivalency Performance Prediction
@@ -170,33 +202,39 @@ const Prediction = () => {
                     {predictionResult.ready ? "Good" : "Needs Improvement"}
                   </p>
                   <p className="text-sm text-gray-500">
-                    {predictionResult.ready ? card.Good.message : card.Bad.message}
+                    {predictionResult.ready
+                      ? card.Good.message
+                      : card.Bad.message}
                   </p>
-                  <button className="text-xs bg-teal-600/80 px-4 py-2 rounded-2xl font-bold text-white">
-                    {predictionResult.ready ? card.Good.button : card.Bad.button}
+                  <button
+                    className="text-xs bg-teal-600/80 px-4 py-2 rounded-2xl font-bold text-white"
+                    onClick={handleClick}
+                  >
+                    {predictionResult.ready
+                      ? card.Good.button
+                      : card.Bad.button}
                   </button>
-                  {predictionResult.weakStrands && !predictionResult.ready && (
-                    <div className="text-xs mt-2 text-gray-600">
-                      <p className="font-semibold mb-1">Recommended Modules:</p>
-                      <ul className="list-disc list-inside text-left">
-                        {Object.entries(predictionResult.weakStrands).map(([strand, link]) => (
-                          <li key={strand}>
-                            {strand}:{" "}
-                            <a href={link} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-                              View
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  <CloseIcon className="absolute top-1 right-1 cursor-pointer" onClick={() => setClose(true)} />
+
+                  <CloseIcon
+                    className="absolute top-1 right-1 cursor-pointer"
+                    onClick={() => setClose(true)}
+                  />
                 </div>
               )}
             </div>
 
+            {/* Display FLT score after submitting */}
+            {displayFltScore && (
+              <div className="mt-6 text-center">
+                <h2 className="text-xl font-bold">FLT Score: {fltScore}</h2>
+              </div>
+            )}
+
             {/* Score Inputs */}
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            <form
+              onSubmit={handleSubmit}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6"
+            >
               {Object.entries(scoreLimits).map(([id, max], index) => (
                 <div key={index}>
                   <label htmlFor={id} className="block font-semibold mb-1">
@@ -204,7 +242,10 @@ const Prediction = () => {
                       .replace("score", "LS ")
                       .replace("1English", "1 - Communication (ENGLISH)")
                       .replace("1Filipino", "1 - Communication (FILIPINO)")
-                      .replace("2SLCT", "2 - Scientific Literacy and Critical Thinking")
+                      .replace(
+                        "2SLCT",
+                        "2 - Scientific Literacy and Critical Thinking"
+                      )
                       .replace("3MPSS", "3 - Mathematics and Problem-Solving")
                       .replace("4LCS", "4 - Life and Career Skills")
                       .replace("5USS", "5 - Understanding Self and Society")
@@ -220,27 +261,25 @@ const Prediction = () => {
                     max={max}
                     className="w-full rounded border px-2 py-1 border-slate-300"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Max allowed: {max}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Max allowed: {max}
+                  </p>
                 </div>
               ))}
-              {/* Submit and FLT Score */}
               <div className="md:col-span-2 flex flex-col items-center mt-6 space-y-4">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="bg-blue-500 text-white font-semibold py-2 px-6 rounded-lg transition hover:scale-105 disabled:opacity-50"
+                  className="bg-blue-500 text-white py-2 px-4 rounded-md"
                 >
-                  {loading ? "Predicting..." : "Submit Scores"}
+                  {loading ? "Loading..." : "Predict Results"}
                 </button>
-                <p className="text-md font-medium text-slate-600">
-                  Total FLT Score: <span className="font-bold">{fltScore}</span>
-                </p>
               </div>
             </form>
           </div>
-          </div>
-          </div>
-  </>
+        </div>
+      </div>
+    </>
   );
 };
 

@@ -9,8 +9,6 @@ function StudentDashboard() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [totalAssessments, setTotalAssessments] = useState(0);
 
-  const studentId = localStorage.getItem("user_id"); // Get the user_id from localStorage
-
   const stats = [
     { count: totalAssessments, label: "Total Assessments" },
     { count: "72%", label: "Lowest Score" },
