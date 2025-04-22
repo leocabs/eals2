@@ -1,68 +1,74 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import bg from "./assets/images/signup-bg.png";
 import logo from "./assets/images/ALS-Logo.png";
-
+import toast, { Toaster } from "react-hot-toast";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [loginError, setLoginError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Email regex pattern to validate emails
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   const handleLogin = async () => {
-    if (!email.includes("@")) {
-      alert("Please enter a valid email address.");
+    // Validate fields
+    if (!email || !password) {
+      toast.error("All fields are required.");
       return;
     }
-  
+
+    if (!emailRegex.test(email)) {
+      toast.error("Invalid email address.");
+      return;
+    }
+
+    setIsLoading(true);
+    const loadingToast = toast.loading("Logging in...");
+
     try {
       const response = await fetch("http://localhost:3000/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-  
+
       const data = await response.json();
-      
-      console.log("Login response:", data); // ✅ Debug output
-  
-      if (data.success && data.user) {
-        // ✅ Destructure safely inside if-block
-        const userId = data.user.id;
-        const userFirstName = data.user.firstName;
-        const userLastName = data.user.lastName;
-        const userEmail = data.user.email;
-        const userRole = data.role;
-  
-        // ✅ Save to localStorage
-        localStorage.setItem("user_id", userId);
-        localStorage.setItem("user_email", userEmail);
-        localStorage.setItem("user_firstname", userFirstName);
-        localStorage.setItem("user_lastname", userLastName);
-        localStorage.setItem("role", userRole);
-  
-        // ✅ Navigate by role
-        if (userRole === "teacher") {
+      toast.dismiss(loadingToast);
+
+      if (data.success) {
+        const { user, role } = data;
+
+        // Save user data to localStorage
+        localStorage.setItem("user_id", user.id);
+        localStorage.setItem("user_email", user.email);
+        localStorage.setItem("user_firstname", user.firstName);
+        localStorage.setItem("user_lastname", user.lastName);
+        localStorage.setItem("role", role);
+
+        toast.success("Login successful!");
+
+        // Redirect based on the role
+        if (role === "teacher") {
           navigate("/teacher-dashboard");
-        } else if (userRole === "student") {
+        } else if (role === "student") {
           navigate("/student-dashboard");
-        } else if (userRole === "admin") {
+        } else if (role === "admin") {
           navigate("/admin-dashboard");
         }
       } else {
-        alert(data.message || "Login failed.");
+        toast.error(data.message || "Login failed.");
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      alert("An error occurred. Please try again.");
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      toast.error("An error occurred. Please try again.");
+      console.error("Login error:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-
-  
 
   return (
     <div className="flex">
@@ -86,7 +92,6 @@ function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          {emailError && <p className="text-red-500 text-sm w-full">{emailError}</p>}
 
           <input
             type="password"
@@ -100,8 +105,6 @@ function Login() {
             <Link to="/forgot-password" className="text-blue-400 cursor-pointer">Forgot password?</Link>
           </div>
 
-          {loginError && <p className="text-red-500 text-sm w-full">{loginError}</p>}
-
           <div className="w-full flex justify-center">
             <button
               className="bg-green-400 rounded-xl w-96 py-4 font-bold text-white hover:bg-green-600"
@@ -113,6 +116,8 @@ function Login() {
           </div>
         </div>
       </div>
+
+      <Toaster /> {/* Add this to display the toasts */}
     </div>
   );
 }

@@ -7,7 +7,7 @@ function Sidebar() {
     <>
     <div className="w-max">
 
-    <div className="w-64 h-screen bg-gray-500/100  text-white p-4 space-y-4">
+    <div className="w-64 h-screen bg-[#E3D0B4]  text-white p-4 space-y-4">
       <div className="flex justify-center mb-5">
         <img src={logo} alt="EALS logo" className="w-48" />
       </div>

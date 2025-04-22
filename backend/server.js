@@ -59,7 +59,7 @@ app.post("/login", (req, res) => {
           id: student.student_id,
           firstName: student.first_name,
           lastName: student.last_name,
-          email: student.als_email,  // Changed this from `student._email`
+          email: student.als_email, 
           role_id: student.role_id,
           profile_pic: student.profile_pic,
         },
@@ -128,14 +128,14 @@ app.post("/login", (req, res) => {
 
 //STUDENT MODULE
 app.get('/student-dashboard', (req, res) => {
-  const studentId = req.headers["student_id"]; // ✅ Get student_id from URL query
+  const studentId = req.query.student_id;
 
   if (!studentId) {
     return res.status(400).json({ error: "student_id is required" });
   }
 
   const query = `
-    SELECT u.student_id, u.first_name, u.last_name, r.role_name, u.email, u.date_of_birth, u.password  
+    SELECT u.student_id, u.first_name, u.last_name, r.role_name, u.email, u.date_of_birth
     FROM students u
     INNER JOIN roles r ON u.role_id = r.role_id
     WHERE u.student_id = ?;
@@ -151,12 +151,10 @@ app.get('/student-dashboard', (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Send back all relevant user data except profile_pic
     res.json(results[0]);
-    console.log(results)
-
   });
 });
+
 
 
 //AE Readiness Prediction --DSSystem
@@ -273,7 +271,7 @@ app.post("/ae-mock-test-result", (req, res) => {
     score,
     date_taken,
   } = req.body;
-
+//to do: can't submit test, foreign key issue student_id
   // Check required fields
   if (
     !student_id ||
@@ -309,7 +307,7 @@ app.post("/ae-mock-test-result", (req, res) => {
       return res.status(500).json({ error: "Failed to save result." });
     }
 
-    return res.status(200).json({ success: true, score });
+    return res.status(200).json({ success: true, score, });
   });
 });
 
@@ -365,11 +363,10 @@ app.get("/teacher-dashboard", (req, res) => {
 });
 
 
-
 //ADMIN MODULE
 app.get("/teacher/activity", (req, res) => {
   const sql =
-    "SELECT id, action, timestamp, details FROM teacher_activity_log ORDER BY timestamp DESC";
+    "SELECT teacher_id, action, timestamp, details FROM teacher_activity_log ORDER BY timestamp DESC";
   db.query(sql, (err, results) => {
     if (err) {
       console.error("Error fetching teacher activity log:", err);

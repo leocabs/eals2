@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
-import Header from "./components/Header";
-import Sidebar from "./components/Sidebar";
 import passed from "./assets/images/passed.png";
 import failed from "./assets/images/failed.png";
 import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 const card = {
   Good: {
@@ -70,7 +69,6 @@ const Prediction = () => {
   const [fltScore, setFltScore] = useState(0);
   const [predictionResult, setPredictionResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(true);
   const [close, setClose] = useState(false);
   const [displayFltScore, setDisplayFltScore] = useState(false); // New state for displaying FLT score
 
@@ -116,12 +114,12 @@ const Prediction = () => {
     e.preventDefault();
     const flt = calculateFltScore();
     setLoading(true);
-  
+
     const requestData = {
       ...formData,
       flt_score: flt,
     };
-  
+
     try {
       // Save the prediction data
       const saveResponse = await fetch("http://localhost:3000/save-prediction", {
@@ -129,27 +127,27 @@ const Prediction = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
       });
-  
+
       if (!saveResponse.ok) {
         throw new Error("Failed to save prediction data.");
       }
-  
+
       // Get prediction result
       const predictionResponse = await fetch("http://localhost:5000/api/prediction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
       });
-  
+
       const prediction = await predictionResponse.json();
-  
+
       // Set result to state (optional for display)
       setPredictionResult({
         ready: prediction.ready,
         weakStrands: prediction.weak_areas || {},
       });
 
-  
+
     } catch (error) {
       console.error("Prediction Error:", error);
     } finally {
@@ -164,123 +162,117 @@ const Prediction = () => {
     } else {
       // Navigate to learning materials page for failed learners
       history("/learning-materials", {
-        state: { 
-          refresh: true, 
+        state: {
+          refresh: true,
           weakAreas: predictionResult?.weakStrands || {} // Pass the weak areas here
         }
       });
     }
   };
-  
 
   return (
-    <>
-      <Header handleShow={() => setShowSidebar(!showSidebar)} />
-      <div className="flex">
-        {showSidebar && (
-          <div className="w-64 fixed h-full z-20">
-            <Sidebar />
-          </div>
-        )}
-        <div className="m-10 p-4 w-full">
-          <h1 className="text-3xl font-bold text-slate-800 mb-4">
-            Accreditation & Equivalency Performance Prediction
-          </h1>
-          <p className="mb-4 text-slate-800">Enter your details and scores</p>
+    <div className="px-4 md:px-10 py-6 w-full flex justify-center">
+      <div className="w-full max-w-5xl">
+        <h1 className="text-3xl font-bold text-slate-800 mb-4">
+          Accreditation & Equivalency Performance Prediction
+        </h1>
+        <p className="mb-4 text-slate-800">Enter your details and scores</p>
 
-          <div className="w-full bg-white p-8 rounded-xl shadow-2xl">
-            {/* Prediction Result Display */}
-            <div className="flex justify-center">
-              {!close && predictionResult && (
-                <div className="relative flex flex-col items-center text-center p-4 space-y-4 bg-slate-200 rounded-lg w-64">
-                  <img
-                    src={predictionResult.ready ? card.Good.image : card.Bad.image}
-                    alt="Result"
-                    className="size-20"
-                  />
-                  <p className="text-2xl font-bold">
-                    {predictionResult.ready ? "Good" : "Needs Improvement"}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {predictionResult.ready
-                      ? card.Good.message
-                      : card.Bad.message}
-                  </p>
-                  <button
-                    className="text-xs bg-teal-600/80 px-4 py-2 rounded-2xl font-bold text-white"
-                    onClick={handleClick}
-                  >
-                    {predictionResult.ready
-                      ? card.Good.button
-                      : card.Bad.button}
-                  </button>
-
-                  <CloseIcon
-                    className="absolute top-1 right-1 cursor-pointer"
-                    onClick={() => setClose(true)}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Display FLT score after submitting */}
-            {displayFltScore && (
-              <div className="mt-6 text-center">
-                <h2 className="text-xl font-bold">FLT Score: {fltScore}</h2>
-              </div>
-            )}
-
-            {/* Score Inputs */}
-            <form
-              onSubmit={handleSubmit}
-              className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6"
-            >
-              {Object.entries(scoreLimits).map(([id, max], index) => (
-                <div key={index}>
-                  <label htmlFor={id} className="block font-semibold mb-1">
-                    {id
-                      .replace("score", "LS ")
-                      .replace("1English", "1 - Communication (ENGLISH)")
-                      .replace("1Filipino", "1 - Communication (FILIPINO)")
-                      .replace(
-                        "2SLCT",
-                        "2 - Scientific Literacy and Critical Thinking"
-                      )
-                      .replace("3MPSS", "3 - Mathematics and Problem-Solving")
-                      .replace("4LCS", "4 - Life and Career Skills")
-                      .replace("5USS", "5 - Understanding Self and Society")
-                      .replace("6DC", "6 - Digital Citizenship")
-                      .replace("pisScore", "PIS Score")}
-                  </label>
-                  <input
-                    type="number"
-                    id={id}
-                    value={inputScores[id]}
-                    onChange={handleChange}
-                    min="0"
-                    max={max}
-                    className="w-full rounded border px-2 py-1 border-slate-300"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Max allowed: {max}
-                  </p>
-                </div>
-              ))}
-              <div className="md:col-span-2 flex flex-col items-center mt-6 space-y-4">
+        <div className="w-full bg-white p-6 md:p-8 rounded-xl shadow-2xl">
+    {/* Prediction Result Display */}
+    <div className="flex justify-center mb-6">
+          <AnimatePresence>
+            {!close && predictionResult && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="relative flex flex-col items-center text-center p-4 space-y-4 bg-slate-200 rounded-lg w-full max-w-xs"
+              >
+                <img
+                  src={predictionResult.ready ? card.Good.image : card.Bad.image}
+                  alt="Result"
+                  className="w-20 h-20"
+                />
+                <p className="text-2xl font-bold">
+                  {predictionResult.ready ? "Good" : "Needs Improvement"}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {predictionResult.ready ? card.Good.message : card.Bad.message}
+                </p>
                 <button
-                  type="submit"
-                  disabled={loading}
-                  className="bg-blue-500 text-white py-2 px-4 rounded-md"
+                  className="text-xs bg-teal-600/80 px-4 py-2 rounded-2xl font-bold text-white"
+                  onClick={handleClick}
                 >
-                  {loading ? "Loading..." : "Predict Results"}
+                  {predictionResult.ready ? card.Good.button : card.Bad.button}
                 </button>
+
+                <CloseIcon
+                  className="absolute top-1 right-1 cursor-pointer"
+                  onClick={() => setClose(true)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+          {/* Display FLT score after submitting */}
+          {displayFltScore && (
+            <div className="mt-4 mb-6 text-center">
+              <h2 className="text-xl font-bold">FLT Score: {fltScore}</h2>
+            </div>
+          )}
+
+          {/* Score Inputs */}
+          <form
+            onSubmit={handleSubmit}
+            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          >
+            {Object.entries(scoreLimits).map(([id, max], index) => (
+              <div key={index}>
+                <label htmlFor={id} className="block font-semibold mb-1">
+                  {id
+                    .replace("score", "LS ")
+                    .replace("1English", "1 - Communication (ENGLISH)")
+                    .replace("1Filipino", "1 - Communication (FILIPINO)")
+                    .replace(
+                      "2SLCT",
+                      "2 - Scientific Literacy and Critical Thinking"
+                    )
+                    .replace("3MPSS", "3 - Mathematics and Problem-Solving")
+                    .replace("4LCS", "4 - Life and Career Skills")
+                    .replace("5USS", "5 - Understanding Self and Society")
+                    .replace("6DC", "6 - Digital Citizenship")
+                    .replace("pisScore", "PIS Score")}
+                </label>
+                <input
+                  type="number"
+                  id={id}
+                  value={inputScores[id]}
+                  onChange={handleChange}
+                  min="0"
+                  max={max}
+                  className="w-full rounded border px-2 py-1 border-slate-300"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Max allowed: {max}
+                </p>
               </div>
-            </form>
-          </div>
+            ))}
+            <div className="md:col-span-2 flex justify-center mt-4">
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-blue-500 text-white py-2 px-6 rounded-md shadow hover:bg-blue-600 transition"
+              >
+                {loading ? "Loading..." : "Predict Results"}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-    </>
+    </div>
   );
-};
-
+}
 export default Prediction;

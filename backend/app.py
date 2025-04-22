@@ -12,8 +12,8 @@ CORS(app)
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': '0000',
-    'database': 'eals'
+    'password': '',
+    'database': 'eals2'
 }
 
 # Load trained model and scaler
@@ -160,7 +160,7 @@ def predict():
 @app.route("/api/recommendations", methods=["POST"])
 def recommend_materials():
     data = request.get_json()
-    student_id = data.get("user_id")
+    student_id = data.get("student_id")
 
     if not student_id:
         return jsonify({"error": "Missing student_id"}), 400

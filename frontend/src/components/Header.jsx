@@ -8,32 +8,40 @@ function Header({ handleShow }) {
   const [userProfilePic, setUserProfilePic] = useState("");
   const [userRoleName, setUserRoleName] = useState("");
 
-  const studentId = localStorage.getItem("user_id");
 
   const deleteUserId = () => {
     localStorage.clear();
   };
 
   useEffect(() => {
-    const studentId = localStorage.getItem("user_id");
+    const fetchStudentData = async () => {
+      const studentId = localStorage.getItem("user_id");
+      console.log(studentId);
   
-    if (studentId) {
-      const url = `http://localhost:3000/student-dashboard?student_id=${studentId}`;
-      fetch(url)
-        .then((res) => res.json())
-        .then((data) => {
+      if (!studentId) {
+        console.warn("No student ID found in localStorage.");
+        return;
+      }
   
-          if (data.first_name && data.last_name && data.role_name) {
-            setUserFirstName(data.first_name);
-            setUserLastName(data.last_name);
-            setUserRoleName(data.role_name);
-          } else {
-            console.error("Profile data is incomplete", data);
-          }
-        })
-        .catch((err) => console.error("Failed to fetch user data 😿", err));
-    }
+      try {
+        const res = await fetch(`http://localhost:3000/student-dashboard?student_id=${studentId}`);
+        const data = await res.json();
+  
+        if (data?.first_name && data?.last_name && data?.role_name) {
+          setUserFirstName(data.first_name);
+          setUserLastName(data.last_name);
+          setUserRoleName(data.role_name);
+        } else {
+          console.error("Profile data is incomplete", data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user data 😿", err);
+      }
+    };
+  
+    fetchStudentData();
   }, []);
+  
 
   const capitalizeFirstLetter = (str) => {
     return str.charAt(0).toUpperCase() + str.slice(1);

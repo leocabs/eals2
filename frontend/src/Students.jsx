@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
-import { GraduationCap} from "lucide-react";
+import React, { useState, useEffect, useMemo } from 'react';
+import { BookOpen } from "lucide-react";
+
+const ITEMS_PER_PAGE = 10;
 
 export default function Students() {
   const [students, setStudents] = useState([]);
@@ -15,7 +17,7 @@ export default function Students() {
 
   const fetchStudents = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/students");
+      const response = await fetch("http://localhost:3000/api/students");
       const data = await response.json();
       setStudents(data);
     } catch (error) {

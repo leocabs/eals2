@@ -222,4 +222,43 @@
   max-width: 48%;
 }
 
+.previous-button {
+  background-color: #f0ad4e;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+.previous-button:hover {
+  background-color: #e69a39;
+}
+
+.next-button {
+  background-color: #5bc0de;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+.next-button:hover {
+  background-color: #46b3cd;
+}
+
+.submit-button {
+  background-color: #d9534f;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+.submit-button:hover {
+  background-color: #c9302c;
+}
+
 

@@ -1,19 +1,48 @@
 import React, { useEffect, useState } from "react";
-import Sidebar from "../components/Sidebar";
-import Header from "../components/Header";
+import Sidebar from "./Sidebar";
+import Header from "./Header";
 function EditableStudentTable() {
   const [students, setStudents] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
   const [editMode, setEditMode] = useState(null);
   const [editedStudent, setEditedStudent] = useState({});
   const [showSidebar, setShowSidebar] = useState(true);
-    
+
   useEffect(() => {
     fetch("http://localhost:3000/users")
       .then((res) => res.json())
       .then((data) => setStudents(data))
       .catch((err) => console.error("Error fetching students:", err));
   }, []);
+
+
+  
+    useEffect(() => {
+      fetchStudents();
+    }, []); // Fetch teachers on initial component mount
+
+
+    //give search function(refer to teachers.jsx)
+  // --- Search Logic ---
+  const filteredStudents = useMemo(() => {
+    if (!searchTerm) {
+      return students;
+    }
+
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+
+    return (
+      firstName.includes(lowerCaseSearchTerm) ||
+      middleName.includes(lowerCaseSearchTerm) ||
+      lastName.includes(lowerCaseSearchTerm) ||
+      als_email.includes(lowerCaseSearchTerm) ||
+      `${firstName} ${middleName} ${lastName}`.includes(lowerCaseSearchTerm) ||
+      `${firstName} ${lastName}`.includes(lowerCaseSearchTerm)
+    );
+  });
+  // --- End Search Logic ---
+
+
 
   const toggleExpand = (id) => {
     setExpandedId(prev => (prev === id ? null : id));
@@ -47,15 +76,18 @@ function EditableStudentTable() {
   };
 
   return (
-   <>
-  <Header handleShow={() => setShowSidebar(!showSidebar)} />
-   <div className="flex ">
-   {showSidebar && (
-        <div className="w-64 fixed h-full z-20">
-          <Sidebar />
-        </div>
-      )}
-   <div className="p-4 w-full">
+    <div className="p-4 w-full">
+      {/* --- Search and Add Button Row --- */}
+      <div className="flex justify-between items-center mb-4">
+            {/* Search Input */}
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="w-2xl bg-gray-200 rounded-md px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+            />
+
       <h2 className="text-xl font-bold mb-4">Student List (Editable)</h2>
       <div className="space-y-4">
         {students.map((student) => (
@@ -124,9 +156,9 @@ function EditableStudentTable() {
         ))}
       </div>
     </div>
-   </div>
-   </>
-  );
+    </div>
+
+  )
 }
 
 export default EditableStudentTable;

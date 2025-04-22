@@ -1,5 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import toast, { Toaster } from 'react-hot-toast';
+
+const notify = () => toast('asd');
 
 // Admin Layout Components
 import AdminSidebar from "./components/AdminSidebar";
@@ -7,7 +10,7 @@ import AdminHeader from "./components/AdminHeader";
 
 // Admin Pages
 import AdminDashboard from "./AdminDashboard";
-import Students from "./Students";
+import Students from "./components/EditableStudentTable";
 import CreateTeachers from "./CreateTeachers";
 
 // Student Pages
@@ -20,8 +23,9 @@ import RecommendedMats from "./RecommendedMats";
 import AEMock from "./AEMock";
 
 // Student Component
-import StudentTable from "./components/StudentTable";
+import StudentTable from "./components/EditableStudentTable";
 import "./AEMockTest.css";
+import StudentSidebar from "./components/StudentSidebar";
 
 // Teacher Component
 import Teachers from "./Teachers";
@@ -61,19 +65,56 @@ function TeacherLayout({ children }) {
   );
 }
 
-export default function App() {
+function StudentLayout({ children }) {
+  return (
+    <div className="flex h-screen">
+      <StudentSidebar />
+      <div className="flex flex-col flex-1 overflow-auto">
+        <TeacherHeader />
+        <div className="flex-grow bg-gray-50 p-4">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
   return (
     <Router>
+      <Toaster />
       <Routes>
-        {/* Student Routes */}
+        {/* Public Routes */}
         <Route path="/" element={<Login />} />
         <Route path="/forgot-password" element={<ResetPass />} />
-        <Route path="/student-dashboard" element={<StudentDashboard />} />
-        <Route path="/prediction" element={<Prediction />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/learning-materials" element={<RecommendedMats />} />
-        <Route path="/mock-test" element={<AEMock />} />
-        <Route path="/students" element={<StudentTable />} />
+
+        {/* Student Protected Layout Routes */}
+
+        {/* Student Protected Layout Routes */}
+        <Route path="/student-dashboard" element={<StudentLayout >
+          <StudentDashboard />
+        </StudentLayout>}
+        />
+
+        <Route path="/prediction" element={<StudentLayout >
+          <Prediction />
+        </StudentLayout>}
+        />
+
+        <Route path="/profile" element={<StudentLayout >
+          <Profile />
+        </StudentLayout>}
+        />
+
+        <Route path="/learning-materials" element={<StudentLayout >
+          <RecommendedMats />
+        </StudentLayout>}
+        />
+
+        <Route path="/mock-test" element={<StudentLayout >
+          <AEMock />
+        </StudentLayout>}
+        />
+
+
 
         {/* Teacher Routes (with Sidebar + Header) */}
         <Route
@@ -180,7 +221,17 @@ export default function App() {
             </AdminLayout>
           }
         />
+        <Route
+          path="/students"
+          element={
+            <AdminLayout>
+              <Students />
+            </AdminLayout>
+          }
+        />
+
       </Routes>
     </Router>
   );
 }
+export default App;
