@@ -352,7 +352,68 @@ LIMIT 0, 1000;
       ],
     }));
 
+    res.json(results);
+  });
+});
+
+router.get("/questions/:ls_id", (req, res) => {
+  const { ls_id } = req.params;
+
+  if (!ls_id) {
+    return res.status(400).json({ error: "ls_id is required" });
+  }
+  db.query("SELECT * FROM questions WHERE ls_id = ?", [ls_id], (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+
+      // Transform the results for frontend compatibility
+      const formatted = results.map((q) => ({
+        id: q.q_id,
+        text: q.question,
+        choices: [q.option_a, q.option_b, q.option_c, q.option_d],
+        answer: q.correct_answer,
+        difficulty: q.difficulty,
+      }));
+
     res.json(formatted);
+  });
+});
+
+// POST create new question
+router.post("/questions", (req, res) => {
+  const { ls_id, question, option_a, option_b, option_c, option_d, correct_answer, difficulty } = req.body;
+  db.query(
+    `INSERT INTO questions 
+      (ls_id, question, option_a, option_b, option_c, option_d, correct_answer, difficulty) 
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [ls_id, question, option_a, option_b, option_c, option_d, correct_answer, difficulty || 'medium'],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err });
+      res.status(201).json({ q_id: result.insertId });
+    }
+  );
+});
+
+// PUT update question
+router.put("/questions/:q_id", (req, res) => {
+  const { q_id } = req.params;
+  const { question, option_a, option_b, option_c, option_d, correct_answer, difficulty } = req.body;
+  db.query(
+    `UPDATE questions
+     SET question = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_answer = ?, difficulty = ?
+     WHERE q_id = ?`,
+    [question, option_a, option_b, option_c, option_d, correct_answer, difficulty, q_id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err });
+      res.sendStatus(200);
+    }
+  );
+});
+
+// DELETE question
+router.delete("/questions/:q_id", (req, res) => {
+  db.query("DELETE FROM questions WHERE q_id = ?", [req.params.q_id], (err) => {
+    if (err) return res.status(500).json({ error: err });
+    res.sendStatus(200);
   });
 });
 
