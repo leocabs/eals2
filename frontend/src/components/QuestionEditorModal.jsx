@@ -4,14 +4,13 @@ export default function QuestionEditorModal({ sectionCode, isOpen, onClose, onSa
   const [question, setQuestion] = useState("");
   const [choices, setChoices] = useState(["", "", "", ""]);
   const [answer, setAnswer] = useState("");
-
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (initialData) {
-      setQuestion(initialData.text);
-      setChoices(initialData.choices);
-      setAnswer(initialData.answer);
+      setQuestion(initialData.text || "");
+      setChoices(initialData.choices || ["", "", "", ""]);
+      setAnswer(getAnswerLetter(initialData.answer, initialData.choices));
     } else {
       setQuestion("");
       setChoices(["", "", "", ""]);
@@ -20,50 +19,78 @@ export default function QuestionEditorModal({ sectionCode, isOpen, onClose, onSa
     setErrors({});
   }, [initialData, isOpen]);
 
+  const getAnswerLetter = (answerText, choiceList) => {
+    const index = choiceList.findIndex((choice) => choice === answerText);
+    return index >= 0 ? String.fromCharCode(65 + index) : "";
+  };
+
   const validate = () => {
     const newErrors = {};
     if (!question.trim()) newErrors.question = "Question cannot be empty.";
     if (choices.some((choice) => !choice.trim())) newErrors.choices = "All choices must be filled.";
-    if (!answer.trim()) newErrors.answer = "Correct answer cannot be empty.";
-    else if (!choices.includes(answer)) newErrors.answer = "Answer must match one of the choices.";
-
+    if (!answer.trim()) {
+      newErrors.answer = "Correct answer cannot be empty.";
+    } else if (!["A", "B", "C", "D"].includes(answer.toUpperCase())) {
+      newErrors.answer = "Answer must be one of A, B, C, or D.";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
     if (!validate()) return;
-  
-    const newQuestion = {
-      text: question,
-      choices,
-      answer,
-      section_code: sectionCode,
+
+    const indexMap = { A: 0, B: 1, C: 2, D: 3 };
+    const answerIndex = indexMap[answer.toUpperCase()];
+    const actualAnswer = choices[answerIndex];
+
+    if (!actualAnswer) {
+      alert("The selected answer letter does not match any of the choices.");
+      return;
+    }
+
+    const truncatedAnswer = actualAnswer.substring(0, 45);
+
+    const questionData = {
+      question: question,
+      option_a: choices[0],
+      option_b: choices[1],
+      option_c: choices[2],
+      option_d: choices[3],
+      correct_answer: truncatedAnswer,
+      difficulty: initialData?.difficulty || "medium",
+      ls_id: sectionCode,
     };
-  
+
     try {
-      if (initialData) {
-        // Update existing
-        await fetch(`http://localhost:3001/students/questions/${initialData.id}`, {
+      let response;
+      if (initialData && initialData.id) {
+        response = await fetch(`http://localhost:3000/students/questions/${initialData.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newQuestion),
+          body: JSON.stringify(questionData),
         });
       } else {
-        // Create new
-        await fetch(`http://localhost:3001/students/questions`, {
+        response = await fetch("http://localhost:3000/students/questions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newQuestion),
+          body: JSON.stringify(questionData),
         });
       }
-  
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Server error response:", errorText);
+        throw new Error(`Server error: ${response.status} ${errorText}`);
+      }
+
       onSave();
       onClose();
     } catch (err) {
       console.error("Failed to save question:", err);
+      alert("An error occurred while saving the question. Please try again.");
     }
-  };  
+  };
 
   if (!isOpen) return null;
 
@@ -78,7 +105,7 @@ export default function QuestionEditorModal({ sectionCode, isOpen, onClose, onSa
           type="text"
           placeholder="Enter question"
           className="w-full p-2 border rounded mb-1"
-          value={question}
+          value={question || ""}
           onChange={(e) => setQuestion(e.target.value)}
         />
         {errors.question && <p className="text-red-500 text-sm mb-2">{errors.question}</p>}
@@ -87,9 +114,9 @@ export default function QuestionEditorModal({ sectionCode, isOpen, onClose, onSa
           <div key={index} className="mb-1">
             <input
               type="text"
-              placeholder={`Choice ${index + 1}`}
+              placeholder={`Choice ${String.fromCharCode(65 + index)}`}
               className="w-full p-2 border rounded"
-              value={choice}
+              value={choice || ""}
               onChange={(e) => {
                 const updated = [...choices];
                 updated[index] = e.target.value;
@@ -102,15 +129,17 @@ export default function QuestionEditorModal({ sectionCode, isOpen, onClose, onSa
 
         <input
           type="text"
-          placeholder="Correct answer"
+          placeholder="Correct answer letter (A–D)"
           className="w-full p-2 border rounded mb-1"
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
+          value={answer || ""}
+          onChange={(e) => setAnswer(e.target.value.toUpperCase())}
         />
         {errors.answer && <p className="text-red-500 text-sm mb-2">{errors.answer}</p>}
 
         <div className="flex justify-end gap-3 mt-4">
-          <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">
+            Cancel
+          </button>
           <button onClick={handleSave} className="px-4 py-2 bg-green-600 text-white rounded">
             {initialData ? "Update" : "Save"}
           </button>

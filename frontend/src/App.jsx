@@ -170,6 +170,26 @@ function App() {
             </TeacherLayout>
           }
         />
+        
+        {/* For viewing of questions */}
+        <Route
+          path="/mock-test/:ls_id"
+          element={
+            <TeacherLayout>
+              <QuestionList />
+            </TeacherLayout>
+          }
+        />
+
+        {/* For adding questions */}
+        <Route
+          path="/mock-test/:ls_id/add"
+          element={
+            <TeacherLayout>
+              <QuestionEditor />
+            </TeacherLayout>
+          }
+        />
 
         <Route
           path="/progress-report"

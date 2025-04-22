@@ -2,13 +2,13 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 const testSections = [
-  { code: "ls1-eng", label: "LS1 – English" },
-  { code: "ls1-fil", label: "LS1 – Filipino" },
-  { code: "ls2", label: "LS2 – Scientific & Critical Thinking" },
-  { code: "ls3", label: "LS3 – Mathematical and Problem Solving Skills" },
-  { code: "ls4", label: "LS4 – Life and Career Skills" },
-  { code: "ls5", label: "LS5 – Understanding the Self and Society" },
-  { code: "ls6", label: "LS6 – Digital Citizenship" }
+  { code: "1", label: "LS1 – English" },
+  { code: "2", label: "LS1 – Filipino" },
+  { code: "3", label: "LS2 – Scientific & Critical Thinking" },
+  { code: "4", label: "LS3 – Mathematical and Problem Solving Skills" },
+  { code: "5", label: "LS4 – Life and Career Skills" },
+  { code: "6", label: "LS5 – Understanding the Self and Society" },
+  { code: "7", label: "LS6 – Digital Citizenship" }
 ];
 
 export default function MockupTest() {
