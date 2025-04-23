@@ -5,8 +5,7 @@ const cors = require("cors");
 const app = express();
 const PORT = 3000;
 const bcrypt = require("bcrypt");
-
-
+const saltRounds = 10;
 
 app.use(
   cors({
@@ -14,6 +13,11 @@ app.use(
     credentials: true,
   })
 );
+
+
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 app.use(express.json());
 
@@ -154,8 +158,26 @@ app.get('/student-dashboard', (req, res) => {
     res.json(results[0]);
   });
 });
+app.post("/update-profile", (req, res) => {
+  const { student_id, password } = req.body;
 
+  // Hash the password before storing it
+  bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
+    if (err) {
+      console.error("Error hashing password:", err);
+      return res.status(500).json({ message: "Hashing failed" });
+    }
 
+    const sql = `UPDATE students SET password = ? WHERE student_id = ?`;
+    db.query(sql, [hashedPassword, student_id], (err, result) => {
+      if (err) {
+        console.error("Error updating password:", err);
+        return res.status(500).json({ message: "Update failed" });
+      }
+      res.json({ message: "Password updated successfully" });
+    });
+  });
+});
 
 //AE Readiness Prediction --DSSystem
 app.post("/save-prediction", (req, res) => {

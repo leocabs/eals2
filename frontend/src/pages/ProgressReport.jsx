@@ -1,17 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bar } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
+import jsPDF from "jspdf";
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+
+// Registering necessary components
+ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
+  Title,
   Tooltip,
-  Legend,
-} from "chart.js";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+  Legend
+);
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 export default function ProgressReport() {
   const [students, setStudents] = useState([]);
@@ -19,21 +20,35 @@ export default function ProgressReport() {
   const [search, setSearch] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [loading, setLoading] = useState(true);
-  const [recommendations, setRecommendations] = useState(null); // For storing recommendations
-  const [loadingRecommendations, setLoadingRecommendations] = useState(false); // For loading state of recommendations
+  const [recommendations, setRecommendations] = useState(null);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const teacherId = localStorage.getItem("user_id");
+  const chartRef = useRef(null);  // Use a ref for the chart container
 
   const exportToPDF = () => {
-    const chart = document.getElementById("student-progress");
-    html2canvas(chart).then((canvas) => {
-      const pdf = new jsPDF("p", "mm", "a4");
-      const imgData = canvas.toDataURL("image/png");
-      const width = 190;
-      const height = (canvas.height * width) / canvas.width;
-      pdf.addImage(imgData, "PNG", 10, 10, width, height);
-      pdf.save(`${selectedStudent.name}-progress-report.pdf`);
-    });
+    const input = chartRef.current;
+  
+    if (input) {
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+  
+      pdf.html(input, {
+        callback: function (doc) {
+          doc.save(`${selectedStudent.name}-progress-report.pdf`);
+        },
+        margin: [10, 10, 10, 10],
+        autoPaging: "text",
+        html2canvas: {
+          scale: 0.8,
+          scrollY: 0,
+        },
+      });
+    }
   };
+  
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -67,7 +82,7 @@ export default function ProgressReport() {
   });
 
   const fetchRecommendations = async (studentId) => {
-    setLoadingRecommendations(true); // Set loading state to true while fetching
+    setLoadingRecommendations(true);
     try {
       const response = await fetch("http://localhost:5000/api/recommendations", {
         method: "POST",
@@ -77,8 +92,8 @@ export default function ProgressReport() {
         body: JSON.stringify({ student_id: studentId }),
       });
       const data = await response.json();
-      setRecommendations(data.weak_areas); // Update state with recommendation data
-      setLoadingRecommendations(false); // Set loading state to false once data is fetched
+      setRecommendations(data.weak_areas);
+      setLoadingRecommendations(false);
     } catch (err) {
       console.error("Error fetching recommendations:", err);
       setLoadingRecommendations(false);
@@ -123,13 +138,12 @@ export default function ProgressReport() {
               className="flex justify-between items-center p-4 border-b cursor-pointer hover:bg-gray-100 transition-all duration-300"
               onClick={() => {
                 setSelectedStudent(student);
-                fetchRecommendations(student.lrn); // Fetch recommendations when student is selected
+                fetchRecommendations(student.student_id);
               }}
             >
               <div className="flex-1">
                 <span className="text-lg font-semibold">{student.name}</span>
-                <span className="text-sm text-gray-500">{student.lrn}</span>
-                <span className="text-sm text-gray-500">{student.class}</span>
+                <span className="text-sm text-gray-500 p-2">{student.lrn}</span>
               </div>
 
               <span
@@ -153,42 +167,15 @@ export default function ProgressReport() {
       {selectedStudent && (
         <div className="bg-white p-6 rounded-md shadow-md space-y-4">
           <h2 className="text-2xl font-semibold text-gray-800">
-            {selectedStudent.name}'s Progress Report
+            {selectedStudent.name}'s Progress
           </h2>
-
-          {/* Academic Progress */}
-          <table className="min-w-full table-auto">
-            <thead>
-              <tr className="border-b">
-                <th className="py-2 px-4 text-left">Learning Strand</th>
-                <th className="py-2 px-4 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedStudent.progress.map((p) => (
-                <tr key={p.strand} className="border-b">
-                  <td className="py-2 px-4">{p.strand}</td>
-                  <td className="py-2 px-4">
-                    {getStudentStatus([p]) === "Ready" ? (
-                      <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                        Ready
-                      </span>
-                    ) : (
-                      <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                        Needs Improvement
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
 
           {/* Progress Bar Chart */}
           <div
             className="bg-white p-6 rounded-md shadow-md space-y-4"
-            id="student-progress"
-            style={{ width: "100%", height: "300px" }}
+            ref={chartRef}  // Referencing chart container for PDF export
+            style={{ width: "100%", height: "300px", backgroundColor: "#ffffff" }}
+
           >
             <Bar
               data={{
@@ -198,14 +185,15 @@ export default function ProgressReport() {
                     label: "Score",
                     data: selectedStudent.progress.map((p) => p.score),
                     backgroundColor: [
-                      "#0db39e",
-                      "#34a0a4",
-                      "#168aad",
-                      "#ee6c4d",
-                      "#9bc53d",
-                      "#c084fc",
-                      "#ffa500",
+                      "rgba(13, 179, 158, 0.8)",  // teal
+                      "rgba(52, 160, 164, 0.8)",  // teal-blue
+                      "rgba(22, 138, 173, 0.8)",  // blue
+                      "rgba(238, 108, 77, 0.8)",  // red-orange
+                      "rgba(155, 197, 61, 0.8)",  // green
+                      "rgba(192, 132, 252, 0.8)", // purple
+                      "rgba(255, 165, 0, 0.8)",   // orange
                     ],
+                    
                   },
                 ],
               }}
@@ -228,34 +216,65 @@ export default function ProgressReport() {
               <div className="animate-spin rounded-full border-4 border-t-4 border-blue-500 w-12 h-12"></div>
             </div>
           ) : (
-            recommendations && (
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-800">Action Plan</h3>
-                {recommendations.map((weakArea) => (
-                  <div key={weakArea.id} className="space-y-2">
-                    <h4 className="text-lg font-semibold">{weakArea.title}</h4>
-                    <ul className="list-disc pl-5">
-                      {weakArea.materials.map((mat) => (
-                        <li key={mat.lmaterials_id}>
-                          <a href={mat.file_url} target="_blank" className="text-blue-600">
-                            {mat.material_title}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )
-          )}
+            <div>
+              {recommendations?.map((weakArea) => (
+                <div key={weakArea.id} className="space-y-4 border p-4 rounded-md bg-gray-50">
+                  <h4 className="text-lg font-semibold text-gray-800">{weakArea.title}</h4>
 
-          <button
-            onClick={exportToPDF}
-            className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-all duration-300"
-          >
-            Export Progress
-          </button>
+                  {/* Collapsible Content */}
+                  <details className="group space-y-2">
+                    <summary className="cursor-pointer text-blue-600">View Recommendations</summary>
+                    <div className="pl-4 space-y-2">
+                      <p className="text-sm text-gray-600">
+                        <strong>Study Tip:</strong> Focus on understanding the core concepts.
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <strong>Estimated Study Time:</strong> 2–3 hours
+                      </p>
+
+                      <div className="mt-2">
+                        <h5 className="font-medium text-gray-700">Recommended Materials:</h5>
+                        <ul className="list-disc list-inside space-y-1">
+                          {weakArea.materials.map((mat) => (
+                            <li key={mat.lmaterials_id}>
+                              <a href={mat.file_url} target="_blank" className="text-blue-600 underline">
+                                {mat.material_title}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="mt-4">
+                        <h5 className="font-medium text-gray-700">To-Do Checklist:</h5>
+                        <ul className="space-y-2 pl-4">
+                          <li>
+                            <input type="checkbox" id={`understood-${weakArea.id}`} className="mr-2" />
+                            <label htmlFor={`understood-${weakArea.id}`}>Understand the main concepts</label>
+                          </li>
+                          <li>
+                            <input type="checkbox" id={`quiz-${weakArea.id}`} className="mr-2" />
+                            <label htmlFor={`quiz-${weakArea.id}`}>Take practice quizzes</label>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+      )}
+
+      {/* Export Button */}
+      {selectedStudent && (
+        <button
+          onClick={exportToPDF}
+          className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-all duration-300"
+        >
+          Export Progress
+        </button>
       )}
     </div>
   );

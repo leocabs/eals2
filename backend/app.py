@@ -98,6 +98,7 @@ def get_learning_materials(ls_ids):
 @app.route("/api/prediction", methods=["POST"])
 def predict():
     data = request.get_json()
+    
     try:
 
         print("Received data:", data)
@@ -161,6 +162,8 @@ def predict():
 def recommend_materials():
     data = request.get_json()
     student_id = data.get("student_id")
+    print("Received student_id:", student_id)
+
 
     if not student_id:
         return jsonify({"error": "Missing student_id"}), 400
@@ -237,6 +240,7 @@ def recommend_materials():
 
     except Exception as e:
         print("Error in recommendation:", e)
+        
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":

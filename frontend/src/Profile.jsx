@@ -67,13 +67,11 @@ const Profile = () => {
   
 
   const handleSave = () => {
-    // Send updated profile data (including password) to the backend
     const updatedProfile = {
       student_id: studentId,
       password: form.password,
-      profile_pic: form.photo || userProfilePic,
     };
-
+  
     fetch(`http://localhost:3000/update-profile`, {
       method: "POST",
       headers: {
@@ -83,14 +81,15 @@ const Profile = () => {
     })
       .then((response) => response.json())
       .then((data) => {
-        alert("Profile updated successfully!");
+        alert("Password updated successfully!");
         setEditMode(false);
       })
       .catch((error) => {
-        console.error("Error updating profile:", error);
-        alert("Failed to update profile.");
+        console.error("Error updating password:", error);
+        alert("Failed to update password.");
       });
   };
+  
 
   const handleCancel = () => {
     setEditMode(false);

@@ -96,7 +96,7 @@ export default function Dashboard() {
             <div>
               <p className="text-sm text-gray-600">Completion Rate</p>
                   <p className="text-lg font-semibold text-black">
-            {dashboardData.completionRate ?? "--"}%
+            {dashboardData.averageScore ?? "--"}%
                 </p>
             </div>
           </div>

@@ -60,7 +60,7 @@ export default function ReadingMaterials() {
   return (
     <div className="p-6 bg-[#F5F5F5] min-h-screen">
       <h2 className="text-2xl font-semibold mb-6">Reading Materials</h2>
-      
+
       {/* Move the Upload New Material button to the right */}
       <div className="flex justify-end mb-5">
         <button
@@ -70,7 +70,7 @@ export default function ReadingMaterials() {
           Upload New Material
         </button>
       </div>
-      
+
       {/* Display the folder list */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 mb-10">
         {folders.map((folder, idx) => (
@@ -93,7 +93,7 @@ export default function ReadingMaterials() {
           </div>
         ))}
       </div>
-      
+
       {/* Only show the materials table if a folder is selected */}
       {selectedFolder && (
         <div>
@@ -115,10 +115,12 @@ export default function ReadingMaterials() {
                       <td className="border px-4 py-2">
                         {material.material_title}
                       </td>
-                      <td className="border px-4 py-2">{material.description}</td>
+                      <td className="border px-4 py-2">
+                        {material.description}
+                      </td>
                       <td className="border px-4 py-2">
                         <a
-                          href={material.file_url}
+                          href={`http://localhost:3000${material.file_url}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 underline"

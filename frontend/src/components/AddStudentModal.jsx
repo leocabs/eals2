@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
-import emailjs from '@emailjs/browser';
+import emailjs from "@emailjs/browser";
 
-
-export default function AddStudentModal({ isOpen, onClose, onSave, initialData = null }) {
-
+export default function AddStudentModal({
+  isOpen,
+  onClose,
+  onSave,
+  initialData = null,
+}) {
   const defaultForm = {
     first_name: "",
     middle_name: "",
@@ -26,7 +29,7 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
     email: "",
     psi_level: "",
     lrn: "",
-    address: ""
+    address: "",
   };
 
   const [formData, setFormData] = useState(defaultForm);
@@ -39,7 +42,7 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
         ...Object.fromEntries(
           Object.entries(initialData).map(([key, value]) => [
             key,
-            value === null ? "" : value
+            value === null ? "" : value,
           ])
         ),
         date_of_birth: initialData.date_of_birth?.split("T")[0] || "",
@@ -63,16 +66,30 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
   const handleSubmit = () => {
     const errors = {};
     const als_email = `${formData.first_name}@als.edu.ph`;
-    const password = `${formData.first_name}${formData.last_name}`.toLowerCase() + "@als";
+    const password =
+      `${formData.first_name}${formData.last_name}`.toLowerCase() + "@als";
 
     // Required fields
     const requiredFields = [
-      "first_name", "last_name", "date_of_birth", "sex", "marital_status",
-      "school", "grade_level", "email", "psi_level", "lrn", "housing", "living_arrangement"
+      "first_name",
+      "last_name",
+      "date_of_birth",
+      "sex",
+      "marital_status",
+      "school",
+      "grade_level",
+      "email",
+      "psi_level",
+      "lrn",
+      "housing",
+      "living_arrangement",
     ];
 
     requiredFields.forEach((field) => {
-      if (!formData[field] || (typeof formData[field] === "string" && formData[field].trim() === "")) {
+      if (
+        !formData[field] ||
+        (typeof formData[field] === "string" && formData[field].trim() === "")
+      ) {
         errors[field] = "This field is required.";
       }
     });
@@ -115,9 +132,22 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
     const loggedInTeacherId = localStorage.getItem("user_id");
 
     const studentData = initialData
-      ? { ...formData, student_id: initialData.student_id, als_email, password, teacher_id: loggedInTeacherId }
+      ? {
+          ...formData,
+          student_id: initialData.student_id,
+          als_email,
+          password,
+          teacher_id: loggedInTeacherId,
+        }
       : { ...formData, als_email, password, teacher_id: loggedInTeacherId };
-    
+    // Convert salary fields to float or null
+    studentData.monthly_salary = formData.monthly_salary
+      ? parseFloat(formData.monthly_salary)
+      : null;
+    studentData.household_salary = formData.household_salary
+      ? parseFloat(formData.household_salary)
+      : null;
+
     onSave(studentData);
 
     // Send email only if adding new student
@@ -125,21 +155,24 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
       const fullName = `${formData.first_name} ${formData.last_name}`;
       alert(`${fullName}\nE-ALS Email: ${als_email}\nPassword: ${password}`);
 
-      emailjs.send(
-        'service_ibtbbmm',
-        'template_xw398r6',
-        {
-          to_name: fullName,
-          to_email: formData.email,
-          email: als_email,
-          password,
-        },
-        '9weiJR5xudRSUEcIN'
-      ).then(() => {
-        console.log('Email sent successfully');
-      }).catch((err) => {
-        console.error('Failed to send email:', err);
-      });
+      emailjs
+        .send(
+          "service_ibtbbmm",
+          "template_xw398r6",
+          {
+            to_name: fullName,
+            to_email: formData.email,
+            email: als_email,
+            password,
+          },
+          "9weiJR5xudRSUEcIN"
+        )
+        .then(() => {
+          console.log("Email sent successfully");
+        })
+        .catch((err) => {
+          console.error("Failed to send email:", err);
+        });
     }
 
     setValidationErrors({});
@@ -148,7 +181,13 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
 
   if (!isOpen) return null;
 
-  const renderInput = (label, name, type = "text", isRequired = false, pattern = null) => (
+  const renderInput = (
+    label,
+    name,
+    type = "text",
+    isRequired = false,
+    pattern = null
+  ) => (
     <div className="flex flex-col">
       <input
         type={type}
@@ -161,7 +200,9 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
         required={isRequired}
       />
       {validationErrors[name] && (
-        <span className="text-red-600 text-sm mt-1">{validationErrors[name]}</span>
+        <span className="text-red-600 text-sm mt-1">
+          {validationErrors[name]}
+        </span>
       )}
     </div>
   );
@@ -180,23 +221,41 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
           {renderInput("Extension Name", "extension_name")}
           {renderInput("Date of Birth", "date_of_birth", "date", true)}
           <div>
-            <select name="sex" value={formData.sex} onChange={handleChange} className="border p-2 rounded">
+            <select
+              name="sex"
+              value={formData.sex}
+              onChange={handleChange}
+              className="border p-2 rounded"
+            >
               <option value="">Select Gender*</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
               <option value="Other">Other</option>
             </select>
-            {validationErrors.sex && <span className="text-red-600 text-sm">{validationErrors.sex}</span>}
+            {validationErrors.sex && (
+              <span className="text-red-600 text-sm">
+                {validationErrors.sex}
+              </span>
+            )}
           </div>
           <div>
-            <select name="marital_status" value={formData.marital_status} onChange={handleChange} className="border p-2 rounded">
+            <select
+              name="marital_status"
+              value={formData.marital_status}
+              onChange={handleChange}
+              className="border p-2 rounded"
+            >
               <option value="">Marital Status*</option>
               <option value="Single">Single</option>
               <option value="Married">Married</option>
               <option value="Widowed">Widowed</option>
               <option value="Single Parent">Single Parent</option>
             </select>
-            {validationErrors.marital_status && <span className="text-red-600 text-sm">{validationErrors.marital_status}</span>}
+            {validationErrors.marital_status && (
+              <span className="text-red-600 text-sm">
+                {validationErrors.marital_status}
+              </span>
+            )}
           </div>
           {renderInput("Occupation", "occupation")}
           {renderInput("Monthly Salary", "monthly_salary", "number")}
@@ -206,7 +265,12 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
           {renderInput("Father's Occupation", "father_occupation")}
           {renderInput("Household Salary", "household_salary", "number")}
           {renderInput("Housing", "housing", "text", true)}
-          {renderInput("Living Arrangement", "living_arrangement", "text", true)}
+          {renderInput(
+            "Living Arrangement",
+            "living_arrangement",
+            "text",
+            true
+          )}
           {renderInput("School", "school", "text", true)}
           {renderInput("Grade Level", "grade_level", "text", true)}
           {renderInput("Email", "email", "email", true)}
@@ -216,8 +280,16 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
         </div>
 
         <div className="flex justify-end space-x-3">
-          <button onClick={onClose} className="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
-          <button onClick={handleSubmit} className="bg-blue-600 text-white px-4 py-2 rounded">
+          <button
+            onClick={onClose}
+            className="bg-gray-500 text-white px-4 py-2 rounded"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
             {initialData ? "Update" : "Save"}
           </button>
         </div>
