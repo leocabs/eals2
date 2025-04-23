@@ -2,7 +2,7 @@ export default function ViewClassModal({ isOpen, onClose, classData, failingStud
   if (!isOpen || !classData) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="bg-white rounded-lg p-6 max-w-lg w-full shadow-xl">
         <h2 className="text-xl font-semibold mb-4">Students failing in {classData.name}</h2>
 

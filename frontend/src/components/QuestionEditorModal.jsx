@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function QuestionEditorModal({ sectionCode, isOpen, onClose, onSave, initialData }) {
   const [question, setQuestion] = useState("");
@@ -21,6 +23,7 @@ export default function QuestionEditorModal({ sectionCode, isOpen, onClose, onSa
 
   const getAnswerLetter = (answerText, choiceList) => {
     const index = choiceList.findIndex((choice) => choice === answerText);
+    
     return index >= 0 ? String.fromCharCode(65 + index) : "";
   };
 
@@ -95,8 +98,8 @@ export default function QuestionEditorModal({ sectionCode, isOpen, onClose, onSa
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-xl">
+    <div className="fixed inset-0 flex items-center justify-center z-50">
+      <div className="bg-white shadow-[0px_0px_40px_8px_rgba(0,_0,_0,_0.1)] rounded-lg p-6 w-full max-w-xl">
         <h2 className="text-lg font-bold mb-4">
           {initialData ? "Edit Question" : "Add New Question"}
         </h2>
@@ -137,10 +140,10 @@ export default function QuestionEditorModal({ sectionCode, isOpen, onClose, onSa
         {errors.answer && <p className="text-red-500 text-sm mb-2">{errors.answer}</p>}
 
         <div className="flex justify-end gap-3 mt-4">
-          <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">
+          <button onClick={onClose} className="bg-gray-100 text-gray-800 font-semibold px-6 py-2 rounded-full shadow hover:bg-gray-200 transition">
             Cancel
           </button>
-          <button onClick={handleSave} className="px-4 py-2 bg-green-600 text-white rounded">
+          <button onClick={handleSave} className="bg-green-100 text-green-800 font-semibold px-6 py-2 rounded-full shadow hover:bg-green-200 transition">
             {initialData ? "Update" : "Save"}
           </button>
         </div>

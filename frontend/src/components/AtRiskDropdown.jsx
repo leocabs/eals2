@@ -53,12 +53,6 @@ export default function AtRiskDropdown() {
                   </p>
                   <p className="text-xs text-gray-500">{student.school}</p>
                 </div>
-                <button
-                  className="text-blue-500 text-sm hover:underline"
-                  onClick={() => setSelectedStudent(student)}
-                >
-                  View
-                </button>
               </div>
             ))
           ) : (

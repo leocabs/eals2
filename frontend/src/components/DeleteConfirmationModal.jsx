@@ -9,7 +9,7 @@ export default function DeleteConfirmationModal({   isOpen,
   if (!isOpen) return null;
 
   return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-lg p-6 w-96">
           <h3 className="text-lg font-bold mb-4">{title}</h3>
           <p className="mb-6">{message}</p>

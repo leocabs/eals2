@@ -184,10 +184,10 @@ export default function ClassManagement() {
   }));
   
   return (
-    <div className="flex">
+    <div className="flex flex-col">
       {/* Main Content */}
-      <div className="flex-1 p-6">
-        <h1 className="text-xl font-semibold mb-4">Class Management</h1>
+      <div className="p-6">
+        <h1 className="text-xl font-bold mb-4">Class Management</h1>
 
         {/* Top Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
@@ -201,53 +201,51 @@ export default function ClassManagement() {
             </h2>
             <p className="text-2xl font-bold">{avgStudents}</p>
           </div>
-          <div className="bg-[#f0f4ff] p-4 rounded-lg">
-            <h2 className="text-sm text-gray-600">Upcoming Exams</h2>
-          </div>
         </div>
 
         {/* Chart */}
         {subjectPerformance.length > 0 && (
-        <div className="bg-white shadow rounded-lg p-4">
-          <h3 className="text-md font-semibold mb-2">
-            Students with Low Grade Per Learning Strand
-          </h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={chartData}>
-              <XAxis dataKey="name" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Bar dataKey="Students" fill="#FF6B6B" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+          <div className="bg-white shadow rounded-lg p-4 mb-6">
+            <h3 className="text-md font-semibold mb-2">
+              Students with Low Grade Per Learning Strand
+            </h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={chartData}>
+                <XAxis dataKey="name" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="Students" fill="#FF6B6B" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </div>
 
-      {/* Sidebar */}
-      <div className="w-64 p-6 border-l border-gray-200">
-
-        <div className="space-y-4">
+      {/* Sidebar (now a normal class below the chart) */}
+      <div className="bg-white shadow rounded-lg p-4 mt-1 m-5">
+        <h3 className="text-md font-semibold mb-2">Learning Strands</h3>
+        <div className="flex space-x-4 overflow-x-auto pb-4"> {/* Added pb-4 */}
           {classes.map((cls, idx) => (
             <div
               key={cls.id}
               onClick={() => setSelectedClass(cls)}
-              className={`p-3 border rounded cursor-pointer hover:bg-gray-100 ${
+              className={`bg-blue-50 flex-shrink-0 p-3 shadow-[11px_10px_4px_-2px_rgba(0,_0,_0,_0.1)] rounded cursor-pointer hover:bg-gray-100 ${
                 selectedClass?.id === cls.id ? "bg-gray-100" : ""
               }`}
+              style={{ width: '220px' }} // Adjust width as needed
             >
-              <div className="space-x-2 mt-2">
+              <div className="space-x-2 mb-2">
                 <button
-                className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 mr-2"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleView(cls);
-                }}
-              >
-                View
-              </button>
+                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 mr-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleView(cls);
+                  }}
+                >
+                  View
+                </button>
               </div>
-              <div className="flex items-center space-x-3 mt-2">
+              <div className="flex items-center space-x-3">
                 <FaBook className="text-2xl text-green-600" />
                 <div>
                   <p className="font-semibold">{cls.name}</p>
@@ -268,11 +266,11 @@ export default function ClassManagement() {
         isOpen={viewModalOpen}
         onClose={() => {
           setViewModalOpen(false);
-          setLowPerformingStudents([]);      // clear on close
+          setLowPerformingStudents([]); // clear on close
         }}
         classData={selectedClass}
         failingStudents={lowPerformingStudents}
       />
-  </div>
+    </div>
   );
 }
