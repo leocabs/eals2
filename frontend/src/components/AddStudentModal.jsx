@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import emailjs from '@emailjs/browser';
-
+import { toast } from 'react-toastify';
 
 export default function AddStudentModal({ isOpen, onClose, onSave, initialData = null }) {
 
@@ -60,10 +60,27 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
     }));
   };
 
+  const generateRandomNumbers = (length) => {
+    return Math.random().toString().slice(2, 2 + length);
+  };
+
+  const generateAlsEmail = (lastName) => {
+    const formattedLastName = lastName.toLowerCase().replace(/\s+/g, '.');
+    const randomNumbers = generateRandomNumbers(4);
+    return `${formattedLastName}${randomNumbers}@als.edu.ph`;
+  };
+
+  const generatePassword = (lastName) => {
+    const formattedLastName = lastName.toLowerCase().replace(/\s+/g, '');
+    const randomNumbers = generateRandomNumbers(6);
+    return `${formattedLastName}als${randomNumbers}`;
+  };
+
   const handleSubmit = () => {
     const errors = {};
-    const als_email = `${formData.first_name}@als.edu.ph`;
-    const password = `${formData.first_name}${formData.last_name}`.toLowerCase() + "@als";
+    const als_email = generateAlsEmail(formData.last_name); // Use the new function with last name
+    const password = generatePassword(formData.last_name); // Use the new function with last name
+    const hashed_password_display = "*****";
 
     // Required fields
     const requiredFields = [
@@ -90,7 +107,7 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
       errors.psi_level = "Must be a number between 1 and 10.";
     }
 
-    // Email format validation
+    // Email format validation (for the student's personal email)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       errors.email = "Enter a valid email address.";
@@ -117,13 +134,46 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
     const studentData = initialData
       ? { ...formData, student_id: initialData.student_id, als_email, password, teacher_id: loggedInTeacherId }
       : { ...formData, als_email, password, teacher_id: loggedInTeacherId };
-    
+    studentData.monthly_salary = formData.monthly_salary ? parseFloat(formData.monthly_salary) : null;
+    studentData.household_salary = formData.household_salary ? parseFloat(formData.household_salary) : null;
+
     onSave(studentData);
+
+    const fullName = `${formData.first_name} ${formData.last_name}`;
+    const successMessage = initialData ? `${fullName} updated successfully!` : `${fullName} added successfully!`;
+
+    toast.success(successMessage, {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "light",
+    });
 
     // Send email only if adding new student
     if (!initialData) {
-      const fullName = `${formData.first_name} ${formData.last_name}`;
-      alert(`${fullName}\nE-ALS Email: ${als_email}\nPassword: ${password}`);
+      toast.info(
+        <div>
+          <p>Account Created for: <strong>{fullName}</strong></p>
+          <p>E-ALS Email: <strong>{als_email}</strong></p>
+          <p>Password: <strong>{hashed_password_display}</strong> (sent via email)</p>
+          <small>Please inform the student that the initial password has been sent to their provided email address.</small>
+        </div>,
+        {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          style: { whiteSpace: 'pre-line' }
+        }
+      );
 
       emailjs.send(
         'service_ibtbbmm',
@@ -137,8 +187,28 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
         '9weiJR5xudRSUEcIN'
       ).then(() => {
         console.log('Email sent successfully');
+        toast.success('Email sent to student!', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+        });
       }).catch((err) => {
         console.error('Failed to send email:', err);
+        toast.error('Failed to send email to student.', {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+        });
       });
     }
 
@@ -167,7 +237,7 @@ export default function AddStudentModal({ isOpen, onClose, onSave, initialData =
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="bg-white w-full max-w-5xl rounded-lg p-8 shadow-xl overflow-y-auto max-h-[90vh]">
         <h2 className="text-2xl font-semibold mb-6">
           {initialData ? "Update Student" : "Add New Student"}

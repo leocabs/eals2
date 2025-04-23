@@ -65,7 +65,7 @@ export default function ReadingMaterials() {
       <div className="flex justify-end mb-5">
         <button
           onClick={handleRedirect}
-          className="bg-emerald-700 text-white px-4 py-2 rounded hover:bg-emerald-500"
+          className="bg-green-100 text-green-800 font-semibold px-6 py-2 rounded-full shadow hover:bg-green-200 transition"
         >
           Upload New Material
         </button>
@@ -100,29 +100,28 @@ export default function ReadingMaterials() {
           {loading ? (
             <p>Loading materials...</p>
           ) : (
-            <table className="min-w-full bg-white border border-gray-300">
-              <thead>
-                <tr>
-                  <th className="border px-4 py-2">Title</th>
-                  <th className="border px-4 py-2">Description</th>
-                  <th className="border px-4 py-2">Download</th>
-                </tr>
-              </thead>
-              <tbody>
+            <table className="min-w-full table-auto bg-white rounded-xl shadow-md overflow-hidden animate-fade-in transition-all duration-300">
+            <thead>
+              <tr className="bg-gray-100 text-gray-800">
+                <th className="px-6 py-3 text-left text-sm font-semibold tracking-wide">Title</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold tracking-wide">Description</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold tracking-wide">Download</th>
+              </tr>
+            </thead>
+            <tbody>
                 {modules.length > 0 ? (
                   modules.map((material) => (
-                    <tr key={material.lmaterials_id}>
-                      <td className="border px-4 py-2">
-                        {material.material_title}
-                      </td>
-                      <td className="border px-4 py-2">{material.description}</td>
-                      <td className="border px-4 py-2">
-                        <a
-                          href={material.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 underline"
-                        >
+                    <tr key={material.lmaterials_id}  className={`transition-all duration-300 hover:bg-gray-100'bg-gray-50' : 'bg-white'}`}
+                >
+                      <td className="px-6 py-4 text-sm">{material.material_title}</td>
+                  <td className="px-6 py-4 text-sm">{material.description}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <a
+                      href={material.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-blue-100 text-blue-800 font-semibold px-4 py-1.5 rounded-full shadow hover:bg-blue-200 transition text-sm"
+                    >
                           View
                         </a>
                       </td>
@@ -130,9 +129,9 @@ export default function ReadingMaterials() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="3" className="text-center py-4">
-                      No materials found.
-                    </td>
+                    <td colSpan="3" className="text-center px-6 py-6 text-gray-500">
+                  No materials found.
+                </td>
                   </tr>
                 )}
               </tbody>

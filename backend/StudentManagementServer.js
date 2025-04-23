@@ -191,6 +191,7 @@ router.get("/dashboard-data", (req, res) => {
   });
 });
 
+
 router.post("/create-student", async (req, res) => {
   const student = req.body;
   console.log("Incoming student data:", student);
@@ -200,9 +201,57 @@ router.post("/create-student", async (req, res) => {
     const hashedPassword = await bcrypt.hash(student.password, salt);
     student.password = hashedPassword;
 
-    db.query("INSERT INTO students SET ?", student, (err, result) => {
+    // SQL query for inserting student data into the 'students' table
+    const insertQuery = `
+      INSERT INTO eals.students (
+        student_id, role_id, teacher_id, psi_level, lrn, address, first_name,
+        middle_name, last_name, extension_name, als_email, password, date_of_birth,
+        sex, marital_status, occupation, status, age, salary, living_with_parents,
+        rented_house, monthly_salary, mother_name, mother_occupation, father_name,
+        father_occupation, household_salary, housing, living_arrangement, school,
+        grade_level, email
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const values = [
+      null, // student_id (auto-increment)
+      3, // role_id fixed to 3 for student
+      student.teacher_id,
+      student.psi_level,
+      student.lrn,
+      student.address || '',
+      student.first_name,
+      student.middle_name || '',
+      student.last_name,
+      student.extension_name || '',
+      student.als_email,
+      student.password,
+      student.date_of_birth,
+      student.sex,
+      student.marital_status,
+      student.occupation || null,
+      'active', // status
+      student.age || null,
+      parseFloat(student.monthly_salary) || null,
+      student.living_with_parents || null,
+      student.rented_house || null,
+      student.monthly_salary || null,
+      student.mother_name || '',
+      student.mother_occupation || '',
+      student.father_name || '',
+      student.father_occupation || '',
+      parseFloat(student.household_salary) || null,
+      student.housing || '',
+      student.living_arrangement || '',
+      student.school || '',
+      student.grade_level || '',
+      student.email
+    ];
+
+    db.query(insertQuery, values, (err, result) => {
       if (err) {
-        console.error("Error inserting into student_info:", err);
+        console.error("Error inserting into students:", err);
         return res.status(500).json({ error: err });
       }
 
@@ -215,27 +264,13 @@ router.post("/create-student", async (req, res) => {
           .status(500)
           .json({ error: "Student insert failed. Invalid ID returned." });
       }
-
-      const psiScore = student.psi_level || 0; // from student object
-
-      db.query(
-        "INSERT INTO assessment_scores (user_id, pis_score) VALUES (?, ?)",
-        [newStudentId, psiScore],
-        (err3) => {
-          if (err3) {
-            console.error("Error inserting into assessment_scores:", err3);
-            return res.status(500).json({ error: err3 });
-          }
-
-          res.status(201).json({ id: newStudentId });
-        }
-      );
     });
   } catch (err) {
     console.error("Unexpected error:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 router.put("/update-student/:id", (req, res) => {
   const student = req.body;
@@ -280,7 +315,7 @@ router.get("/performance-history", (req, res) => {
     JOIN 
       students s ON a.user_id = s.student_id
     WHERE 
-      s.teacher_id = 5
+      s.teacher_id = ?
     ORDER BY 
       a.date_taken ASC
  `;
@@ -346,6 +381,7 @@ LIMIT 0, 1000;
     if (err) return res.status(500).json({ error: err });
 
     const formatted = results.map((student) => ({
+      student_id: student.student_id,
       name: `${student.first_name} ${student.middle_name} ${student.last_name}`,
       lrn: student.lrn,
       class: student.school,
@@ -360,7 +396,7 @@ LIMIT 0, 1000;
       ],
     }));
 
-    res.json(results);
+    res.json(formatted);
   });
 });
 
