@@ -18,14 +18,30 @@ router.get("/students", (req, res) => {
 
   const query = `
     SELECT
-      s.student_id,
-      s.first_name,
-      s.middle_name,
-      s.last_name,
-      s.sex,
-      s.school,
-      s.lrn,
-      s.teacher_id
+  s.student_id,
+  s.first_name,
+  s.middle_name,
+  s.last_name,
+  s.extension_name, 
+  s.date_of_birth,  
+  s.sex,
+  s.marital_status, 
+  s.occupation,     -- Add this
+  s.monthly_salary, -- Add this
+  s.mother_name,    -- Add this
+  s.mother_occupation, -- Add this
+  s.father_name,    -- Add this
+  s.father_occupation, -- Add this
+  s.household_salary, -- Add this
+  s.housing,        -- Add this
+  s.living_arrangement, -- Add this
+  s.school,
+  s.grade_level,    -- Add this
+  s.email,          -- Add this
+  s.psi_level,      -- Add this
+  s.lrn,
+  s.address,        
+  s.teacher_id
     FROM 
       students s
     WHERE
@@ -278,35 +294,27 @@ router.get("/performance-history", (req, res) => {
   });
 });
 
-router.delete(
-  "/aemock-results/delete-by-student/:studentId",
-  async (req, res) => {
-    const { studentId } = req.params;
+router.delete("/aemock-results/delete-by-student/:studentId", (req, res) => {
+  const { studentId } = req.params;
 
-    try {
-      // Delete all aemock_results records related to the student using student_id
-      const result = await db.query(
-        "DELETE FROM aemock_results WHERE student_id = ?",
-        [studentId] // Ensure the student_id is used in the query
-      );
+  db.query(
+    "DELETE FROM aemock_results WHERE student_id = ?",
+    [studentId],
+    (error, result) => {
+      if (error) {
+        console.error("Error deleting aemock_results records:", error);
+        return res.status(500).json({ error: "Failed to delete records." });
+      }
 
       if (result.affectedRows > 0) {
-        res.status(200).json({
-          message: "Related aemock_results records deleted successfully.",
-        });
+        res.status(200).json({ message: "Records deleted successfully." });
       } else {
-        res
-          .status(404)
-          .json({ message: "No related records found to delete." });
+        res.status(404).json({ message: "No records found to delete." });
       }
-    } catch (error) {
-      console.error("Error deleting aemock_results records:", error);
-      res
-        .status(500)
-        .json({ error: "Failed to delete related aemock_results records." });
     }
-  }
-);
+  );
+});
+
 
 // GET: Real students and their LS scores
 router.get("/progress-report", (req, res) => {
@@ -417,4 +425,251 @@ router.delete("/questions/:q_id", (req, res) => {
   });
 });
 
+// Modified endpoint to count unique students below threshold per subject
+router.get("/students-below-threshold", (req, res) => {
+  const teacherId = req.query.teacher_id;
+
+  // If teacher_id is not provided, return a 400 error
+  if (!teacherId) {
+    return res.status(400).json({ error: "teacher_id is required" });
+  }
+
+  const query = `
+    WITH unique_scores AS (
+      SELECT 
+        s.student_id,
+        MAX(a.score_id) as latest_score_id
+      FROM 
+        students s
+      JOIN 
+        assessment_scores a ON s.student_id = a.user_id
+      WHERE 
+        s.teacher_id = ?
+      GROUP BY 
+        s.student_id
+    ),
+    student_strand_scores AS (
+      SELECT 
+        s.student_id,
+        a.ls1_total_english,
+        a.ls1_total_filipino,
+        a.ls2_slct,
+        a.ls3_mpss,
+        a.ls4_lcs,
+        a.ls5_uss,
+        a.ls6_dc
+      FROM 
+        students s
+      JOIN 
+        unique_scores us ON s.student_id = us.student_id
+      JOIN 
+        assessment_scores a ON us.latest_score_id = a.score_id
+      WHERE 
+        s.teacher_id = ?
+    )
+
+    SELECT 'LS 1 English' AS strand, COUNT(DISTINCT student_id) AS student_count 
+    FROM student_strand_scores
+    WHERE ls1_total_english < 5
+    
+    UNION
+    
+    SELECT 'LS 1 Filipino' AS strand, COUNT(DISTINCT student_id) AS student_count 
+    FROM student_strand_scores
+    WHERE ls1_total_filipino < 5
+    
+    UNION
+    
+    SELECT 'LS 2' AS strand, COUNT(DISTINCT student_id) AS student_count 
+    FROM student_strand_scores
+    WHERE ls2_slct < 5
+    
+    UNION
+    
+    SELECT 'LS 3' AS strand, COUNT(DISTINCT student_id) AS student_count 
+    FROM student_strand_scores
+    WHERE ls3_mpss < 5
+    
+    UNION
+    
+    SELECT 'LS 4' AS strand, COUNT(DISTINCT student_id) AS student_count 
+    FROM student_strand_scores
+    WHERE ls4_lcs < 5
+    
+    UNION
+    
+    SELECT 'LS 5' AS strand, COUNT(DISTINCT student_id) AS student_count 
+    FROM student_strand_scores
+    WHERE ls5_uss < 5
+    
+    UNION
+    
+    SELECT 'LS 6' AS strand, COUNT(DISTINCT student_id) AS student_count 
+    FROM student_strand_scores
+    WHERE ls6_dc < 5
+  `;
+
+  db.query(query, [teacherId, teacherId], (err, results) => {
+    if (err) {
+      console.error("Error fetching low-score students per subject:", err);
+      return res.status(500).json({ error: err });
+    }
+    res.json(results);
+  });
+});
+
+// Modified endpoint to get students below threshold for specific strand
+router.get("/students-below-threshold/:strand", (req, res) => {
+  const strand = req.params.strand;
+  const teacherId = req.query.teacher_id;
+
+  if (!teacherId) {
+    return res.status(400).json({ error: "teacher_id is required" });
+  }
+
+  let column;
+  switch (strand) {
+    case "LS 1 English":
+      column = "ls1_total_english";
+      break;
+    case "LS 1 Filipino":
+      column = "ls1_total_filipino";
+      break;
+    case "LS 2":
+      column = "ls2_slct";
+      break;
+    case "LS 3":
+      column = "ls3_mpss";
+      break;
+    case "LS 4":
+      column = "ls4_lcs";
+      break;
+    case "LS 5":
+      column = "ls5_uss";
+      break;
+    case "LS 6":
+      column = "ls6_dc";
+      break;
+    default:
+      return res.status(400).json({ error: "Unknown strand" });
+  }
+
+  // Query to get only the latest assessment score for each student
+  const query = `
+    WITH latest_scores AS (
+      SELECT 
+        user_id,
+        MAX(score_id) as latest_score_id
+      FROM 
+        assessment_scores
+      GROUP BY 
+        user_id
+    )
+    
+    SELECT 
+      s.student_id, 
+      s.first_name, 
+      s.last_name, 
+      a.${column} AS score
+    FROM 
+      students s
+    JOIN 
+      latest_scores ls ON s.student_id = ls.user_id
+    JOIN 
+      assessment_scores a ON ls.latest_score_id = a.score_id
+    WHERE 
+      a.${column} < 5 
+      AND s.teacher_id = ?
+    ORDER BY 
+      s.last_name, s.first_name
+  `;
+
+  db.query(query, [teacherId], (err, result) => {
+    if (err) {
+      console.error("Error retrieving students for strand:", err);
+      res.status(500).send("Server error");
+    } else {
+      res.json(result);
+    }
+  });
+});
+
+// Modified endpoint to get failing students for a specific subject
+router.get("/failing-subject/:subject", (req, res) => {
+  const subject = req.params.subject;
+  const teacherId = req.query.teacher_id;
+
+  if (!teacherId) {
+    return res.status(400).json({ error: "teacher_id is required" });
+  }
+
+  let column;
+  switch (subject) {
+    case "LS 1 English":
+      column = "ls1_total_english";
+      break;
+    case "LS 1 Filipino":
+      column = "ls1_total_filipino";
+      break;
+    case "LS 2":
+      column = "ls2_slct";
+      break;
+    case "LS 3":
+      column = "ls3_mpss";
+      break;
+    case "LS 4":
+      column = "ls4_lcs";
+      break;
+    case "LS 5":
+      column = "ls5_uss";
+      break;
+    case "LS 6":
+      column = "ls6_dc";
+      break;
+    default:
+      return res.status(400).json({ error: "Unknown subject" });
+  }
+
+  // Query to get only the latest assessment score for each student
+  const query = `
+    WITH latest_scores AS (
+      SELECT 
+        user_id,
+        MAX(score_id) as latest_score_id
+      FROM 
+        assessment_scores
+      GROUP BY 
+        user_id
+    )
+    
+    SELECT 
+      s.student_id AS student_id, 
+      s.first_name AS first_name, 
+      s.last_name AS last_name, 
+      a.${column} AS score
+    FROM 
+      students s
+    JOIN 
+      latest_scores ls ON s.student_id = ls.user_id
+    JOIN 
+      assessment_scores a ON ls.latest_score_id = a.score_id
+    WHERE 
+      a.${column} < 5 
+      AND s.teacher_id = ?
+    ORDER BY 
+      s.last_name, s.first_name
+  `;
+
+  console.log("➡️ Subject received:", subject);
+  console.log("➡️ Teacher ID:", teacherId);
+
+  db.query(query, [teacherId], (err, result) => {
+    if (err) {
+      console.error("Error retrieving failing students for subject:", err);
+      res.status(500).send("Server error");
+    } else {
+      res.json(result);
+    }
+  });
+});
 module.exports = router;

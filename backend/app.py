@@ -12,8 +12,8 @@ CORS(app)
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': '',
-    'database': 'eals2'
+    'password': '0000',
+    'database': 'eals'
 }
 
 # Load trained model and scaler

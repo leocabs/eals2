@@ -17,14 +17,14 @@ export default function ClassManagement() {
     {
       id: 1,
       name: "English",
-      subject: "LS 1",
+      subject: "LS 1 English",
       performance: [],
       studentsList: []
     },
     {
       id: 2,
       name: "FILIPINO",
-      subject: "LS 1",
+      subject: "LS 1 Filipino",
       performance: [],
       studentsList: []
     },
@@ -61,10 +61,29 @@ export default function ClassManagement() {
     }
   ];  
 
+  const [subjectPerformance, setSubjectPerformance] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [selectedClass, setSelectedClass] = useState(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedStrand, setSelectedStrand] = useState(null);
+  const [lowPerformingStudents, setLowPerformingStudents] = useState([]);
+
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const { data } = await axios.get("http://localhost:3001/students/students-below-threshold");
+        // Get teacher ID from localStorage
+        const teacherId = localStorage.getItem('user_id');
+        
+        if (!teacherId) {
+          console.error("Teacher ID is missing. User might not be logged in.");
+          return;
+        }
+        
+        // Update the API endpoint to include teacher_id parameter
+        const { data } = await axios.get(`http://localhost:3000/students/students-below-threshold?teacher_id=${teacherId}`);
         
         // Create the updated list with fetched data
         const updatedClasses = initialClasses.map(cls => ({
@@ -82,21 +101,18 @@ export default function ClassManagement() {
     fetchCounts();
   }, []);
   
-
-  const [subjectPerformance, setSubjectPerformance] = useState([]);
-  const [classes, setClasses] = useState([]);
-  const [selectedClass, setSelectedClass] = useState(null);
-  const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedStrand, setSelectedStrand] = useState(null);
-const [lowPerformingStudents, setLowPerformingStudents] = useState([]);
-
   useEffect(() => {
     const fetchBelowThreshold = async () => {
       try {
-        const res = await axios.get("http://localhost:3001/students/students-below-threshold");
+        // Get teacher ID from localStorage
+        const teacherId = localStorage.getItem('user_id');
+        
+        if (!teacherId) {
+          console.error("Teacher ID is missing. User might not be logged in.");
+          return;
+        }
+        
+        const res = await axios.get(`http://localhost:3000/students/students-below-threshold?teacher_id=${teacherId}`);
         setSubjectPerformance(res.data);
       } catch (error) {
         console.error("Error fetching students below threshold:", error);
@@ -111,7 +127,17 @@ const [lowPerformingStudents, setLowPerformingStudents] = useState([]);
   
     const fetchStudentsForStrand = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/students/students-below-threshold/${encodeURIComponent(selectedStrand)}`);
+        // Get teacher ID from localStorage
+        const teacherId = localStorage.getItem('user_id');
+        
+        if (!teacherId) {
+          console.error("Teacher ID is missing. User might not be logged in.");
+          return;
+        }
+        
+        const res = await axios.get(
+          `http://localhost:3000/students/students-below-threshold/${encodeURIComponent(selectedStrand)}?teacher_id=${teacherId}`
+        );
         setLowPerformingStudents(res.data);
       } catch (error) {
         console.error("Error fetching students for strand:", error);
@@ -126,8 +152,16 @@ const [lowPerformingStudents, setLowPerformingStudents] = useState([]);
     setViewModalOpen(true);
   
     try {
+      // Get teacher ID from localStorage
+      const teacherId = localStorage.getItem('user_id');
+      
+      if (!teacherId) {
+        console.error("Teacher ID is missing. User might not be logged in.");
+        return;
+      }
+      
       const res = await axios.get(
-        `http://localhost:3001/students/failing-subject/${encodeURIComponent(classItem.subject)}`
+        `http://localhost:3000/students/failing-subject/${encodeURIComponent(classItem.subject)}?teacher_id=${teacherId}`
       );
       setLowPerformingStudents(res.data);
     } catch (error) {
@@ -135,22 +169,20 @@ const [lowPerformingStudents, setLowPerformingStudents] = useState([]);
     }
   };  
   
-
   const validStudentCounts = classes
-  .map((cls) => Number(cls.students))
-  .filter((num) => !isNaN(num));
+    .map((cls) => Number(cls.students))
+    .filter((num) => !isNaN(num));
 
   const avgStudents =
-  validStudentCounts.length > 0
-    ? Math.floor(validStudentCounts.reduce((sum, n) => sum + n, 0) / validStudentCounts.length)
-    : 0;
+    validStudentCounts.length > 0
+      ? Math.floor(validStudentCounts.reduce((sum, n) => sum + n, 0) / validStudentCounts.length)
+      : 0;
 
-    const chartData = subjectPerformance.map(entry => ({
-      name: entry.strand,
-      Students: entry.student_count
-    }));
+  const chartData = subjectPerformance.map(entry => ({
+    name: entry.strand,
+    Students: entry.student_count
+  }));
   
-
   return (
     <div className="flex">
       {/* Main Content */}

@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+
 function EditableStudentTable() {
   const [students, setStudents] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
   const [editMode, setEditMode] = useState(null);
   const [editedStudent, setEditedStudent] = useState({});
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
+  // Fetch students data
   useEffect(() => {
     fetch("http://localhost:3000/users")
       .then((res) => res.json())
@@ -15,38 +17,30 @@ function EditableStudentTable() {
       .catch((err) => console.error("Error fetching students:", err));
   }, []);
 
-
-  
-    useEffect(() => {
-      fetchStudents();
-    }, []); // Fetch teachers on initial component mount
-
-
-    //give search function(refer to teachers.jsx)
   // --- Search Logic ---
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
   const filteredStudents = useMemo(() => {
-    if (!searchTerm) {
-      return students;
-    }
+    if (!searchTerm) return students;
 
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
 
-    return (
-      firstName.includes(lowerCaseSearchTerm) ||
-      middleName.includes(lowerCaseSearchTerm) ||
-      lastName.includes(lowerCaseSearchTerm) ||
-      als_email.includes(lowerCaseSearchTerm) ||
-      `${firstName} ${middleName} ${lastName}`.includes(lowerCaseSearchTerm) ||
-      `${firstName} ${lastName}`.includes(lowerCaseSearchTerm)
-    );
-  });
+    return students.filter((student) => {
+      const fullName = `${student.first_name} ${student.middle_name || ""} ${student.last_name}`.toLowerCase();
+      return (
+        fullName.includes(lowerCaseSearchTerm) ||
+        student.email?.toLowerCase().includes(lowerCaseSearchTerm) ||
+        student.als_email?.toLowerCase().includes(lowerCaseSearchTerm)
+      );
+    });
+  }, [searchTerm, students]);
   // --- End Search Logic ---
 
-
-
   const toggleExpand = (id) => {
-    setExpandedId(prev => (prev === id ? null : id));
-    setEditMode(null); // Reset edit mode when collapsing
+    setExpandedId((prev) => (prev === id ? null : id));
+    setEditMode(null);
   };
 
   const startEditing = (student) => {
@@ -55,42 +49,43 @@ function EditableStudentTable() {
   };
 
   const handleInputChange = (field, value) => {
-    setEditedStudent(prev => ({ ...prev, [field]: value }));
+    setEditedStudent((prev) => ({ ...prev, [field]: value }));
   };
 
   const saveChanges = (id) => {
-    // Update the student list in local state
-    setStudents(prev =>
-      prev.map(student =>
+    setStudents((prev) =>
+      prev.map((student) =>
         student.student_id === id ? editedStudent : student
       )
     );
     setEditMode(null);
 
-    // Optional: send to backend
+    // Optional: Send updated student to backend
     // fetch(`http://localhost:3000/update-student/${id}`, {
     //   method: "PUT",
     //   headers: { "Content-Type": "application/json" },
     //   body: JSON.stringify(editedStudent),
-    // }).then(res => res.json()).then(...);
+    // })
+    //   .then((res) => res.json())
+    //   .then((data) => console.log("Update response:", data));
   };
 
   return (
     <div className="p-4 w-full">
-      {/* --- Search and Add Button Row --- */}
+      {/* --- Search and Title Row --- */}
       <div className="flex justify-between items-center mb-4">
-            {/* Search Input */}
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="w-2xl bg-gray-200 rounded-md px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600"
-            />
+        <input
+          type="text"
+          placeholder="Search by name or email..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          className="w-96 bg-gray-200 rounded-md px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+        />
+        <h2 className="text-xl font-bold">Student List (Editable)</h2>
+      </div>
 
-      <h2 className="text-xl font-bold mb-4">Student List (Editable)</h2>
       <div className="space-y-4">
-        {students.map((student) => (
+        {filteredStudents.map((student) => (
           <div key={student.student_id} className="border rounded shadow bg-white">
             <div
               onClick={() => toggleExpand(student.student_id)}
@@ -109,12 +104,14 @@ function EditableStudentTable() {
               <div className="px-4 pb-4 text-sm">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {[
-                    "lrn", "first_name", "middle_name", "last_name", "class_name", "email", "status",
+                    "lrn", "first_name", "middle_name", "last_name", "class_name", "email", "als_email", "status",
                     "address", "date_of_birth", "age", "sex", "marital_status", "occupation",
                     "salary", "living_with_parents", "rented_house"
                   ].map((field) => (
                     <div key={field} className="flex flex-col">
-                      <label className="text-xs text-gray-500 capitalize">{field.replace(/_/g, " ")}</label>
+                      <label className="text-xs text-gray-500 capitalize">
+                        {field.replace(/_/g, " ")}
+                      </label>
                       <input
                         type="text"
                         className="input input-sm input-bordered"
@@ -156,9 +153,7 @@ function EditableStudentTable() {
         ))}
       </div>
     </div>
-    </div>
-
-  )
+  );
 }
 
 export default EditableStudentTable;

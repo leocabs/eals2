@@ -61,7 +61,7 @@ export default function ProgressReport() {
 
   const classes = [...new Set(students.map((s) => s.class))];
   const filteredStudents = students.filter((student) => {
-    const matchName = student.name.toLowerCase().includes(search.toLowerCase());
+    const matchName = (student.name || "").toLowerCase().includes((search || "").toLowerCase());
     const matchClass = selectedClass ? student.class === selectedClass : true;
     return matchName && matchClass;
   });
